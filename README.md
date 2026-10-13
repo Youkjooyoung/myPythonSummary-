@@ -3,4 +3,11 @@
 
 2026-10-12~ ing
 
-https://blog.naver.com/fdufdu
+📝 블로그: https://blog.naver.com/fdufdu
+
+## 📚 학습 기록
+
+| 일차 | 날짜 | 주제 | 링크 |
+|:---:|:---:|---|:---:|
+| 1 | 2026-10-12 | 2026-10-13(v01_12 ~ v01_19) | [보기](https://blog.naver.com/fdufdu/224439257016) |
+| 2 | 2026-10-13 | 2026-10-12(v01_1 ~ v01_11) | [보기](https://blog.naver.com/fdufdu/224440374855) |
