@@ -2,7 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 # 1. 이미지 로드
-img = cv2.imread("backg.jpg")
+img = cv2.imread("./capture_images/backg.jpg")
 
 # 2. 이미지 증강
 img_bright = cv2.convertScaleAbs(img, alpha=1, beta=50)
