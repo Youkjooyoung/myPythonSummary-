@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>출근길 지하철 혼잡도</title>
+<meta name="description" content="출발역·도착역·출발 시각으로 구간별 혼잡도, 추천 출발 시각, 한산한 칸, 실시간 도착 정보를 보여주는 출근길 지하철 혼잡도 서비스">
+<style>
+  /* ===== 색/글꼴 토큰 (라이트) ===== */
+  :root {
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --surface: #fcfcfb;
+    --surface-2: #f0efec;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --series-1: #2a78d6;
+    /* 혼잡도 단계 색 (상태 색 - 항상 아이콘+글자와 함께 사용) */
+    --ok: #0ca30c;
+    --warn: #fab219;
+    --serious: #ec835a;
+    --crit: #d03b3b;
+    --on-status: #0b0b0b;
+    --font: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --surface: #1a1a19;
+      --surface-2: #242422;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --accent: #3987e5;
+      --series-1: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --series-1: #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+
+  header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  header.top h1 { font-size: 24px; margin: 0; letter-spacing: -0.01em; }
+  header.top p { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; }
+
+  .tabs { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; }
+  .tabs button {
+    border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px;
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 14px; }
+  .stack > * + * { margin-top: 16px; }
+
+  /* ===== 입력 폼 ===== */
+  form.query { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap: 12px; align-items: end; }
+  .field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; font-weight: 600; }
+  .field { min-width: 0; }
+  .field input, .field select {
+    width: 100%; min-width: 0; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px; min-height: 40px;
+  }
+  .field input:focus, .field select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .swap {
+    height: 40px; width: 40px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg);
+    color: var(--ink-2); cursor: pointer; font-size: 16px;
+  }
+  .daytype { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 3px; }
+  .seg button { border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-2); padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+  .daytype .reason { font-size: 13px; color: var(--ink-2); }
+  .btn-primary {
+    font: inherit; font-weight: 600; border: 0; border-radius: 9px; padding: 9px 18px; min-height: 40px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .btn-ghost {
+    font: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+    background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .msg { font-size: 13px; color: var(--crit); margin-top: 8px; min-height: 1em; }
+
+  .notice {
+    display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink-2);
+    background: var(--surface-2); border-radius: 10px; padding: 10px 12px;
+  }
+  .notice b { color: var(--ink); }
+
+  /* ===== 결과: KPI ===== */
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+  .kpi .k { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  .kpi .v { font-size: 26px; font-weight: 700; margin-top: 2px; letter-spacing: -0.01em; }
+  .kpi .d { font-size: 13px; color: var(--ink-2); margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; align-items: start; }
+
+  /* 혼잡도 칩 */
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .chip svg { display: block; }
+
+  /* 노선 배지 */
+  .line-badge {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px;
+    border-radius: 11px; color: #fff; font-size: 12px; font-weight: 700;
+  }
+
+  /* ===== 구간별 혼잡도 ===== */
+  .leg + .leg { margin-top: 14px; }
+  .leg-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .leg-head small { color: var(--ink-2); font-weight: 400; }
+  .transfer { font-size: 12px; color: var(--ink-2); padding: 6px 0 0 4px; }
+  .segrow {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 90px 76px; gap: 8px; align-items: center;
+    font-size: 13px; padding: 5px 4px; border-radius: 6px;
+  }
+  .segrow:hover { background: var(--surface-2); }
+  .segrow .t { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .segrow .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .segrow .bar { position: relative; height: 10px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .segrow .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+  .segrow .pct { font-variant-numeric: tabular-nums; text-align: right; }
+  .segrow.peak { box-shadow: inset 0 0 0 1px var(--baseline); }
+
+  /* ===== 차트 ===== */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-box { position: relative; }
+  .chart-box svg { display: block; width: 100%; }
+  .chart-box text { font-family: var(--font); }
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.12); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    min-width: 150px; display: none; z-index: 2;
+  }
+  .tooltip .h { font-weight: 700; margin-bottom: 4px; }
+  .tooltip .r { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); }
+  .tooltip .r b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  details.tbl { margin-top: 10px; font-size: 13px; }
+  details.tbl summary { cursor: pointer; color: var(--ink-2); }
+  details.tbl table { margin-top: 8px; }
+
+  /* ===== 추천 ===== */
+  .recos { display: grid; gap: 8px; }
+  .reco {
+    display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center;
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; cursor: pointer; background: transparent;
+    font: inherit; color: inherit; text-align: left;
+  }
+  .reco:hover { background: var(--surface-2); }
+  .reco .tm { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .reco .ds { font-size: 12px; color: var(--ink-2); }
+  .reco .dl { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .reco.best { box-shadow: inset 0 0 0 2px var(--accent); }
+
+  /* ===== 칸별 혼잡도 ===== */
+  .train-dir { font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+  .cars { display: grid; gap: 4px; }
+  .car { text-align: center; font-size: 11px; color: var(--ink-2); min-width: 0; }
+  .car .box {
+    height: 44px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    color: var(--on-status); font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+  .car:first-child .box { border-top-left-radius: 16px; }
+  .car .lv { margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .car.reco-car .no { color: var(--ink); font-weight: 700; }
+  .car.reco-car .box { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+  .leg-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+  /* ===== 실시간 도착 ===== */
+  .arrivals { display: grid; gap: 8px; }
+  .arr { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
+  .arr .dst { font-weight: 600; font-size: 14px; }
+  .arr .dst small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+  .arr .eta { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .src-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: var(--ink-2); }
+  .api-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .api-row input { flex: 1 1 180px; font: inherit; font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
+
+  .level-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink-2); }
+
+  /* ===== 기획서 탭 ===== */
+  .doc h2 { font-size: 18px; margin: 0 0 8px; }
+  .doc h3 { font-size: 15px; margin: 18px 0 6px; }
+  .doc p, .doc li { color: var(--ink); font-size: 14px; }
+  .doc .muted { color: var(--ink-2); }
+  .doc ul { padding-left: 20px; margin: 6px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .tbl-scroll { overflow-x: auto; }
+  .opinion { border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 8px 0; }
+  code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  .hidden { display: none !important; }
+  footer { margin-top: 24px; font-size: 12px; color: var(--ink-2); }
+
+  @media (max-width: 900px) {
+    .grid2 { grid-template-columns: minmax(0, 1fr); }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    form.query { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+    form.query .f-date, form.query .f-time { grid-column: span 1; }
+    form.query .f-submit { grid-column: span 1; }
+  }
+  @media (max-width: 560px) {
+    form.query { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+    form.query .f-from { grid-column: 1 / -1; }
+    form.query .swap { display: none; }
+    form.query .f-to { grid-column: 1 / -1; }
+    form.query .f-submit { grid-column: 1 / -1; }
+    .segrow { grid-template-columns: 40px minmax(0, 1fr) 70px; }
+    .segrow .chipcell { display: none; }
+    .car .lv { display: none; }
+    .kpi .v { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>출근길 지하철 혼잡도</h1>
+      <p>출발역·도착역·출발 시각을 넣으면 구간별 혼잡도와 덜 붐비는 출발 시각, 한산한 칸을 알려드립니다.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="svc">서비스</button>
+      <button role="tab" aria-selected="false" data-tab="plan">기획서 · 데이터 수집 계획</button>
+    </div>
+  </header>
+
+  <!-- ================= 서비스 탭 ================= -->
+  <main id="tab-svc" class="stack">
+
+    <section class="card">
+      <form class="query" id="query" autocomplete="off">
+        <div class="field f-from">
+          <label for="from">출발역</label>
+          <input id="from" list="stations" required placeholder="예) 신림">
+        </div>
+        <button type="button" class="swap" id="swap" title="출발·도착 바꾸기" aria-label="출발역과 도착역 바꾸기">⇄</button>
+        <div class="field f-to">
+          <label for="to">도착역</label>
+          <input id="to" list="stations" required placeholder="예) 여의도">
+        </div>
+        <div class="field f-date">
+          <label for="date">날짜</label>
+          <input id="date" type="date" required>
+        </div>
+        <div class="field f-time">
+          <label for="time">출발 희망 시각</label>
+          <input id="time" type="time" step="600" required>
+        </div>
+        <div class="daytype">
+          <span class="field"><label style="margin:0">요일 구분</label></span>
+          <div class="seg" id="daySeg" role="group" aria-label="요일 구분">
+            <button type="button" data-day="weekday">평일</button>
+            <button type="button" data-day="saturday">토요일</button>
+            <button type="button" data-day="sunday">일요일·공휴일</button>
+          </div>
+          <span class="reason" id="dayReason"></span>
+          <span style="flex:1"></span>
+          <button class="btn-primary f-submit" type="submit">혼잡도 보기</button>
+        </div>
+      </form>
+      <datalist id="stations"></datalist>
+      <div class="msg" id="msg" role="alert"></div>
+      <div class="notice" id="dataNotice"></div>
+    </section>
+
+    <div id="result" class="stack hidden">
+
+      <section class="kpis" id="kpis"></section>
+
+      <div class="grid2">
+        <!-- 왼쪽: 구간별 혼잡도 -->
+        <section class="card">
+          <h2>구간별 예상 혼잡도</h2>
+          <p class="sub" id="routeSub"></p>
+          <div class="level-legend" id="levelLegend" style="margin-bottom:10px"></div>
+          <div id="legs"></div>
+        </section>
+
+        <!-- 오른쪽: 그래프 / 추천 / 칸 / 실시간 -->
+        <div class="stack">
+          <section class="card">
+            <h2>출발 시각별 혼잡도</h2>
+            <p class="sub">이 경로로 출발했을 때 지나가는 구간 중 <b>가장 붐비는 구간</b>의 혼잡도입니다. 그래프를 누르면 그 시각으로 다시 계산합니다.</p>
+            <div class="legend" id="chartLegend"></div>
+            <div class="chart-box" id="chartBox">
+              <div id="chart"></div>
+              <div class="tooltip" id="tip"></div>
+            </div>
+            <details class="tbl">
+              <summary>표로 보기 (30분 단위)</summary>
+              <div class="tbl-scroll" id="chartTable"></div>
+            </details>
+          </section>
+
+          <section class="card">
+            <h2>덜 붐비는 추천 출발 시각</h2>
+            <p class="sub">희망 시각 기준 −60분 ~ +30분 사이를 10분 단위로 비교했습니다.</p>
+            <div class="recos" id="recos"></div>
+          </section>
+
+          <section class="card">
+            <h2>상대적으로 한산한 칸</h2>
+            <p class="sub" id="carSub"></p>
+            <div class="leg-pick" id="legPick"></div>
+            <div class="train-dir" id="trainDir"></div>
+            <div class="cars" id="cars"></div>
+          </section>
+
+          <section class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <h2>실시간 열차 도착 정보</h2>
+              <span class="src-tag" id="arrSrc">시뮬레이션</span>
+            </div>
+            <p class="sub" id="arrSub"></p>
+            <div class="arrivals" id="arrivals"></div>
+            <div class="api-row">
+              <input id="apiKey" placeholder="서울 열린데이터광장 실시간 지하철 인증키 (선택)" aria-label="실시간 지하철 인증키">
+              <button class="btn-ghost" id="apiBtn" type="button">실시간 조회</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>실측 데이터 불러오기 (선택)</h2>
+      <p class="sub">공공데이터포털의 <b>「서울교통공사_지하철혼잡도정보」 CSV</b>를 올리면 2·7호선 구간 값을 실측치로 바꿔 계산합니다. (9호선은 운영사가 달라 이 파일에 없습니다.)</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="file" id="csvFile" accept=".csv,text/csv" aria-label="혼잡도 CSV 파일">
+        <button class="btn-ghost hidden" id="csvReset" type="button">모델 데이터로 되돌리기</button>
+      </div>
+      <p class="sub" id="csvStatus" style="margin:8px 0 0"></p>
+    </section>
+
+    <footer>
+      혼잡도 기준: 100% = 한 칸 정원 160명(좌석 54 + 입석), 34% = 좌석이 모두 찬 상태.
+      단계: 여유 &lt;60% · 보통 60~99% · 혼잡 100~149% · 매우 혼잡 150% 이상.
+    </footer>
+  </main>
+
+  <!-- ================= 기획서 탭 ================= -->
+  <main id="tab-plan" class="stack hidden">
+    <section class="card doc">
+      <h2>0. 목표</h2>
+      <p>출근길 지하철 혼잡도 서비스를 만들기 위해 <b>어떤 데이터를 어디서, 어떤 형태로 수집해야 하는지</b> 탐구한다. 이 파일의 「서비스」 탭은 그 데이터 구조를 그대로 본뜬 시뮬레이션으로 동작하는 프로토타입이다.</p>
+
+      <h3>1. 만들고 싶은 서비스</h3>
+      <p>출근길 지하철 혼잡도를 미리 파악하고, <b>덜 붐비는 출발 시각과 칸</b>을 추천해 주는 서비스.</p>
+
+      <h3>2. 필요한 데이터와 수집 방법</h3>
+      <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>데이터</th><th>제공처</th><th>단위 · 갱신</th><th>수집 방법</th><th>서비스에서 쓰는 곳</th></tr></thead>
+        <tbody>
+          <tr><td>지하철 호선별·역별·시간대별 승하차 인원</td><td>서울 열린데이터광장</td><td>역 × 1시간, 월별</td><td>Open API(JSON) / CSV</td><td>역별 출발(승차)·도착(하차) 수요 → 구간 부하 추정, 실측 혼잡도가 없는 노선 보완</td></tr>
+          <tr><td>지하철 혼잡도 정보</td><td>공공데이터포털 (서울교통공사)</td><td>역 × 방향 × 30분, 요일구분(평일/토/일)</td><td>CSV 파일 다운로드</td><td>구간별 혼잡도, 시간대별 그래프, 추천 출발 시각 (「실측 데이터 불러오기」로 바로 적용 가능)</td></tr>
+          <tr><td>칸별 혼잡도</td><td>통신사 · 민간 Open API 등</td><td>열차 × 칸, 실시간/통계</td><td>REST API (키 필요)</td><td>한산한 칸 추천 (현재는 계단 위치 기반 시뮬레이션)</td></tr>
+          <tr><td>실시간 도착정보</td><td>서울 열린데이터광장 (swopenAPI)</td><td>역 단위, 실시간</td><td>Open API(JSON), 실시간 전용 인증키</td><td>실시간 열차 도착 정보</td></tr>
+          <tr><td>역 정보 (역명·호선·역코드·환승 여부)</td><td>서울 열린데이터광장 역사 정보</td><td>정적</td><td>CSV / API</td><td>역 검색, 경로 탐색, 환승역 판별 (같은 역명이 2개 이상 호선에 있으면 환승역)</td></tr>
+          <tr><td>공휴일 · 특일 정보</td><td>공공데이터포털 (한국천문연구원 특일 정보, <code>getRestDeInfo</code>)</td><td>일 단위, 연 1회 + 수시(임시공휴일)</td><td>Open API(XML/JSON)</td><td>날짜 → 평일/토요일/일요일·공휴일 자동 판별</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <ul class="muted">
+        <li><b>공휴일 처리</b>: 토·일만 보면 평일 공휴일(예: 2026-10-05 개천절 대체공휴일, 10-09 한글날)을 출근일로 잘못 계산한다. 그래서 공휴일은 <b>일요일 패턴</b>으로 계산한다. 선거일·임시공휴일은 연초 데이터에 없다가 나중에 추가되므로 API를 주기적으로 다시 받아야 한다.</li>
+        <li><b>근로자의 날(5/1)</b>처럼 법정 공휴일은 아니지만 출근자가 크게 줄어드는 날은 특일 API로 판별되지 않는다 → 별도 보정 목록이 필요하다.</li>
+        <li><b>9호선</b>은 서울교통공사가 아닌 별도 운영사라 혼잡도 데이터가 따로 있다. 급행·일반 열차의 혼잡도 차이도 크다.</li>
+        <li>혼잡도 데이터는 <b>과거 평균</b>이므로, 비·눈 오는 날 같은 변동은 기상청 단기예보를 추가하면 보정할 수 있다.</li>
+      </ul>
+
+      <h3>3. 입력값과 출력값</h3>
+      <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>구분</th><th>항목</th><th>이 프로토타입에서의 구현</th></tr></thead>
+        <tbody>
+          <tr><td>입력</td><td>출발역 · 도착역</td><td>역명 검색 입력 (2·7·9호선 123개 역), 환승 경로 자동 탐색</td></tr>
+          <tr><td>입력</td><td>출발 희망 시각</td><td>10분 단위 시각</td></tr>
+          <tr><td>입력</td><td>요일 (평일/주말)</td><td>날짜를 고르면 <b>평일 / 토요일 / 일요일·공휴일</b> 자동 판별 + 직접 변경 가능</td></tr>
+          <tr><td>출력</td><td>구간별 예상 혼잡도</td><td>역→역 구간마다 % 와 4단계(여유/보통/혼잡/매우 혼잡)</td></tr>
+          <tr><td>출력</td><td>시간대별 혼잡도 그래프</td><td>05:30~24:00 출발 시각별 최고 혼잡도, 비교 요일 함께 표시</td></tr>
+          <tr><td>출력</td><td>추천 출발 시각</td><td>희망 시각 −60~+30분 중 덜 붐비는 시각 Top 3</td></tr>
+          <tr><td>출력</td><td>한산한 칸 번호</td><td>노선별 칸 수(2호선 10칸, 7호선 8칸, 9호선 6칸) 기준 추천</td></tr>
+          <tr><td>출력</td><td>실시간 열차 도착 정보</td><td>인증키 입력 시 실시간 API, 없으면 배차간격 시뮬레이션</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>4. 타겟층</h3>
+      <p>직장인(20대 ~ 50대 후반)</p>
+      <div class="opinion">
+        <p style="margin:0 0 6px"><b>10대 포함에 대한 의견 — 포함하는 것이 맞다고 본다. 다만 "핵심"이 아닌 "보조" 타겟으로.</b></p>
+        <ul style="margin:0">
+          <li><b>시간이 겹친다</b>: 중·고등학교 등교 시간(07:30~08:20)이 출근 피크(07:30~09:00)와 거의 그대로 겹친다. 같은 열차에 타는 승객이므로 혼잡도 자체에는 이미 학생이 포함되어 있고, 학생도 같은 정보가 필요하다.</li>
+          <li><b>데이터로 확인할 수 있다</b>: 앞에서 수집한 서울시 실시간 인구데이터(<code>v02_1_crowd_data.py</code>)에 <code>PPLTN_RATE_10</code>(10대 비율)이 있고, 교통카드 승차 유형(청소년)으로 역별 학생 비중도 볼 수 있다.</li>
+          <li><b>필요한 기능이 조금 다르다</b>: 학생은 이동 거리가 짧고 지각 마감(등교 시각)이 고정이라 "늦게 출발" 추천보다 <b>"몇 분 일찍 출발하면 한산한가"</b>가 더 유용하다. 반대로 대학생(20대 초반)은 1교시 시각이 제각각이라 이미 직장인 타겟과 비슷하게 쓸 수 있다.</li>
+          <li><b>추가로 고려할 층</b>: 05:30~07:00 첫차 시간대는 60대 이상 이른 출근자 비중이 높다. 이 시간대 혼잡 구간도 실제로 존재하므로 확장 타겟으로 메모해 둔다.</li>
+        </ul>
+        <p style="margin:6px 0 0">→ 정리: <b>"평일 아침 지하철로 이동하는 통근·통학자(10대 후반 ~ 50대)"</b>, 핵심 페르소나는 직장인, 보조 페르소나는 고등·대학생.</p>
+      </div>
+
+      <h3>5. 그 외</h3>
+      <ul>
+        <li>제출 형태: 단일 <code>.html</code> 파일 (인터넷 연결 없이도 동작, 외부 라이브러리 없음).</li>
+        <li>현재 혼잡도 값은 역별 거주·업무 가중치로 만든 <b>출발지-도착지 수요 모델(중력 모델)</b>로 계산한 시뮬레이션이다. 아침에는 주거지 역 → 업무지구 역 방향, 저녁에는 반대 방향이 붐비도록 만들었다.</li>
+        <li>다음 단계: ① 혼잡도 CSV를 실제로 내려받아 「실측 데이터 불러오기」로 검증 ② 승하차 인원 API를 파이썬으로 수집해 9호선 등 미제공 노선 보정 ③ 특일 정보 API로 공휴일 목록 자동 갱신.</li>
+      </ul>
+    </section>
+  </main>
+
+</div>
+
+<script>
+/* =========================================================
+   1. 역 데이터 (서울 구간, 운행 순서대로)
+   ========================================================= */
+const LINES = {
+  '2': {
+    id: '2', name: '2호선', color: '#00a84d', loop: true, cars: 10, K: 140, run: 2, apiId: '1002',
+    dirNames: ['내선순환', '외선순환'], apiDir: ['내선', '외선'], csvDir: ['내선', '외선'],
+    stations: ['시청','을지로입구','을지로3가','을지로4가','동대문역사문화공원','신당','상왕십리','왕십리','한양대','뚝섬',
+      '성수','건대입구','구의','강변','잠실나루','잠실','잠실새내','종합운동장','삼성','선릉',
+      '역삼','강남','교대','서초','방배','사당','낙성대','서울대입구','봉천','신림',
+      '신대방','구로디지털단지','대림','신도림','문래','영등포구청','당산','합정','홍대입구','신촌',
+      '이대','아현','충정로'],
+  },
+  '7': {
+    id: '7', name: '7호선', color: '#747f00', loop: false, cars: 8, K: 128, run: 2, apiId: '1007',
+    dirNames: ['장암 방면', '온수 방면'], apiDir: ['상행', '하행'], csvDir: ['상선', '하선'],
+    stations: ['온수','천왕','광명사거리','철산','가산디지털단지','남구로','대림','신풍','보라매','신대방삼거리',
+      '장승배기','상도','숭실대입구','남성','이수','내방','고속터미널','반포','논현','학동',
+      '강남구청','청담','뚝섬유원지','건대입구','어린이대공원','군자','중곡','용마산','사가정','면목',
+      '상봉','중화','먹골','태릉입구','공릉','하계','중계','노원','마들','수락산',
+      '도봉산','장암'],
+  },
+  '9': {
+    id: '9', name: '9호선', color: '#bdb092', ink: '#0b0b0b', loop: false, cars: 6, K: 145, run: 2, apiId: '1009',
+    dirNames: ['중앙보훈병원 방면', '개화 방면'], apiDir: ['하행', '상행'], csvDir: [],
+    stations: ['개화','김포공항','공항시장','신방화','마곡나루','양천향교','가양','증미','등촌','염창',
+      '신목동','선유도','당산','국회의사당','여의도','샛강','노량진','노들','흑석','동작',
+      '구반포','신반포','고속터미널','사평','신논현','언주','선정릉','삼성중앙','봉은사','종합운동장',
+      '삼전','석촌고분','석촌','송파나루','한성백제','올림픽공원','둔촌오륜','중앙보훈병원'],
+  },
+};
+const TRANSFER_MIN = 5;           // 환승 소요 시간(분)
+const SERVICE_START = 5 * 60 + 30; // 05:30
+const SERVICE_END = 24 * 60;       // 24:00
+
+// 역별 [거주(아침 출발) 가중치, 업무(아침 도착) 가중치] - 기본값 [1.5, 1]
+const RW = {
+  신림:[5,1], 봉천:[4,.8], 서울대입구:[4,1.2], 낙성대:[3,.8], 사당:[4,1.5], 방배:[2,1.2], 서초:[1.5,3], 교대:[2,3],
+  강남:[2,7], 역삼:[1,6.5], 선릉:[1.2,6], 삼성:[1,6], 종합운동장:[1,1.5], 잠실새내:[3,1], 잠실:[4,3], 잠실나루:[3,.8],
+  강변:[3,1.2], 구의:[3,1], 건대입구:[3,2.5], 성수:[1.5,3.5], 뚝섬:[1.5,2], 한양대:[1,2], 왕십리:[4,1.5], 상왕십리:[2,.8],
+  신당:[2,1], 동대문역사문화공원:[1.5,2], 을지로4가:[1,2.5], 을지로3가:[1,3], 을지로입구:[1,5], 시청:[1,5], 충정로:[1,2],
+  아현:[2,.8], 이대:[1,1.8], 신촌:[2,2], 홍대입구:[3,2], 합정:[2.5,1.5], 당산:[3,1.5], 영등포구청:[3,1.5], 문래:[2,2],
+  신도림:[5,1.5], 대림:[3.5,1], 구로디지털단지:[2.5,4.5], 신대방:[3,.8],
+  온수:[3,1], 천왕:[2,.6], 광명사거리:[4,.8], 철산:[4,.8], 가산디지털단지:[2,6], 남구로:[2.5,1], 신풍:[3,.8], 보라매:[3,1.2],
+  신대방삼거리:[3,.8], 장승배기:[3,.8], 상도:[3,.8], 숭실대입구:[2,1.5], 남성:[3,.8], 이수:[3,1.2], 내방:[2,1], 고속터미널:[2.5,2.5],
+  반포:[2,1.2], 논현:[1.5,3.5], 학동:[1,3.5], 강남구청:[1,3.5], 청담:[1.2,2.5], 뚝섬유원지:[1.5,1], 어린이대공원:[2,1], 군자:[3,1],
+  중곡:[3,.8], 용마산:[3,.6], 사가정:[3,.6], 면목:[4,.6], 상봉:[4,1], 중화:[3,.6], 먹골:[3,.6], 태릉입구:[3,.8], 공릉:[3,.8],
+  하계:[4,.6], 중계:[4,.6], 노원:[5,1], 마들:[3,.5], 수락산:[3,.5], 도봉산:[3,.6], 장암:[1.5,.4],
+  개화:[1.5,.4], 김포공항:[4,1.5], 공항시장:[2,.6], 신방화:[2.5,.6], 마곡나루:[2.5,4], 양천향교:[2.5,.8], 가양:[4,1], 증미:[3,.6],
+  등촌:[3.5,.8], 염창:[3.5,.8], 신목동:[3,.8], 선유도:[2,1], 국회의사당:[1,3.5], 여의도:[1.5,7], 샛강:[1,2], 노량진:[3,1.5],
+  노들:[1.5,.6], 흑석:[2.5,1.2], 동작:[1.5,.6], 구반포:[2,.6], 신반포:[2,.8], 사평:[1.5,1], 신논현:[1.5,5], 언주:[1.5,3.5],
+  선정릉:[1.5,4], 삼성중앙:[1.5,3.5], 봉은사:[1.5,3], 삼전:[3,.8], 석촌고분:[3,.8], 석촌:[3.5,1], 송파나루:[3,.8], 한성백제:[2.5,.8],
+  올림픽공원:[3,1.2], 둔촌오륜:[3,.6], 중앙보훈병원:[3,.6],
+};
+// 여가(주말·낮 시간) 수요가 큰 역
+const LEISURE = {
+  홍대입구:2.5, 강남:2, 잠실:2.5, 건대입구:2, 성수:2, 신촌:1.5, 합정:1.5, 여의도:1.5, 고속터미널:2, 어린이대공원:1.5,
+  올림픽공원:1.5, 뚝섬유원지:1.5, 신논현:1.5, 종합운동장:1.2, 을지로입구:1.2, 시청:1, 동대문역사문화공원:1.5,
+};
+
+// 공휴일 (한국천문연구원 특일 정보 기준 내장 데이터 - 실제 서비스는 API로 갱신)
+const HOLIDAYS = {
+  '2026-01-01':'신정', '2026-02-16':'설날 연휴', '2026-02-17':'설날', '2026-02-18':'설날 연휴',
+  '2026-03-01':'삼일절', '2026-03-02':'대체공휴일(삼일절)', '2026-05-05':'어린이날', '2026-05-24':'부처님오신날',
+  '2026-05-25':'대체공휴일(부처님오신날)', '2026-06-03':'전국동시지방선거', '2026-06-06':'현충일', '2026-08-15':'광복절',
+  '2026-08-17':'대체공휴일(광복절)', '2026-09-24':'추석 연휴', '2026-09-25':'추석', '2026-09-26':'추석 연휴',
+  '2026-10-03':'개천절', '2026-10-05':'대체공휴일(개천절)', '2026-10-09':'한글날', '2026-12-25':'성탄절',
+  '2027-01-01':'신정', '2027-02-06':'설날 연휴', '2027-02-07':'설날', '2027-02-08':'설날 연휴', '2027-02-09':'대체공휴일(설날)',
+  '2027-03-01':'삼일절', '2027-05-05':'어린이날', '2027-05-13':'부처님오신날', '2027-06-06':'현충일', '2027-08-15':'광복절',
+  '2027-08-16':'대체공휴일(광복절)', '2027-09-14':'추석 연휴', '2027-09-15':'추석', '2027-09-16':'추석 연휴',
+  '2027-10-03':'개천절', '2027-10-04':'대체공휴일(개천절)', '2027-10-09':'한글날', '2027-10-11':'대체공휴일(한글날)',
+  '2027-12-25':'성탄절', '2027-12-27':'대체공휴일(성탄절)',
+};
+
+const DAY_LABEL = { weekday: '평일', saturday: '토요일', sunday: '일요일·공휴일' };
+const LEVELS = [
+  { name: '여유',     max: 60,       color: 'var(--ok)' },
+  { name: '보통',     max: 100,      color: 'var(--warn)' },
+  { name: '혼잡',     max: 150,      color: 'var(--serious)' },
+  { name: '매우 혼잡', max: Infinity, color: 'var(--crit)' },
+];
+
+/* =========================================================
+   2. 혼잡도 모델
+   - 아침: 거주 가중치 높은 역 → 업무 가중치 높은 역으로 이동(중력 모델)
+   - 저녁: 반대 방향, 낮·주말: 여가 수요
+   - 각 구간(출발역 기준)에 지나가는 수요를 누적해 '구간 부하'를 만든다
+   ========================================================= */
+function nextIdx(L, i, dir) {
+  const n = L.stations.length;
+  if (dir === 0) return L.loop ? (i + 1) % n : i + 1;
+  return L.loop ? (i - 1 + n) % n : i - 1;
+}
+
+function structLoad(L, wO, wD) {
+  const n = L.stations.length;
+  const out = [new Float64Array(n), new Float64Array(n)];
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      let dir, steps;
+      if (L.loop) {
+        const d0 = (j - i + n) % n;
+        if (d0 <= n - d0) { dir = 0; steps = d0; } else { dir = 1; steps = n - d0; }
+      } else {
+        dir = j > i ? 0 : 1; steps = Math.abs(j - i);
+      }
+      const v = wO[i] * wD[j] * Math.exp(-steps / 16);
+      let c = i;
+      for (let s = 0; s < steps; s++) { out[dir][c] += v; c = nextIdx(L, c, dir); }
+    }
+  }
+  let mx = 0;
+  out.forEach(a => a.forEach(v => { mx = Math.max(mx, v); }));
+  out.forEach(a => { for (let k = 0; k < a.length; k++) a[k] /= mx; });
+  return out;
+}
+
+for (const L of Object.values(LINES)) {
+  const R = L.stations.map(s => (RW[s] || [1.5, 1])[0]);
+  const W = L.stations.map(s => (RW[s] || [1.5, 1])[1]);
+  const B = L.stations.map((s, k) => 1 + 0.4 * R[k] + 0.4 * W[k] + (LEISURE[s] || 0));
+  L.am = structLoad(L, R, W);
+  L.pm = structLoad(L, W, R);
+  L.base = structLoad(L, B, B);
+  L.index = Object.fromEntries(L.stations.map((s, k) => [s, k]));
+}
+
+const gauss = (x, mu, sig) => Math.exp(-0.5 * ((x - mu) / sig) ** 2);
+// 요일 구분별 시간 프로파일 (h: 시각, 소수 시간)
+const PROFILE = {
+  weekday:  h => ({ am: gauss(h, 8.15, 0.65) + 0.3 * gauss(h, 7.1, 0.45),
+                    pm: 0.85 * gauss(h, 18.5, 0.75) + 0.2 * gauss(h, 22.6, 0.7),
+                    base: 0.2 + 0.12 * gauss(h, 13, 2) }),
+  saturday: h => ({ am: 0.2 * gauss(h, 8.5, 1), pm: 0.25 * gauss(h, 18.3, 1.3), base: 0.12 + 0.45 * gauss(h, 15, 3) }),
+  sunday:   h => ({ am: 0.1 * gauss(h, 8.5, 1), pm: 0.18 * gauss(h, 18, 1.3),  base: 0.1 + 0.38 * gauss(h, 15, 3) }),
+};
+
+// CSV 실측값: REAL[line][dir][stationIdx][dayType] = [{t, v}, ...]
+let REAL = {};
+
+function interpReal(arr, t) {
+  if (t <= arr[0].t) return arr[0].v;
+  for (let k = 1; k < arr.length; k++) {
+    if (t <= arr[k].t) {
+      const a = arr[k - 1], b = arr[k];
+      return a.v + (b.v - a.v) * (t - a.t) / (b.t - a.t);
+    }
+  }
+  return arr[arr.length - 1].v;
+}
+
+// 구간 혼잡도(%) : line 노선, dir 방향, i 출발역 index, tMin 출발 시각(분)
+function congestion(lineId, dir, i, dayType, tMin) {
+  const real = REAL[lineId]?.[dir]?.[i]?.[dayType];
+  if (real && real.length) return Math.max(0, interpReal(real, tMin));
+  const L = LINES[lineId];
+  const p = PROFILE[dayType](tMin / 60);
+  return L.K * (p.am * L.am[dir][i] + p.pm * L.pm[dir][i] + p.base * L.base[dir][i]) + 4;
+}
+
+const levelOf = pct => LEVELS.findIndex(l => pct < l.max);
+
+/* =========================================================
+   3. 경로 탐색 (다익스트라, 환승 5분)
+   ========================================================= */
+const ALL_STATIONS = {};
+for (const L of Object.values(LINES)) {
+  L.stations.forEach(s => { (ALL_STATIONS[s] = ALL_STATIONS[s] || []).push(L.id); });
+}
+
+function findRoute(from, to) {
+  const key = (l, i) => l + '|' + i;
+  const dist = {}, prev = {}, done = new Set();
+  const queue = [];
+  for (const l of ALL_STATIONS[from]) {
+    const k = key(l, LINES[l].index[from]);
+    dist[k] = 0; queue.push(k);
+  }
+  while (queue.length) {
+    queue.sort((a, b) => dist[a] - dist[b]);
+    const cur = queue.shift();
+    if (done.has(cur)) continue;
+    done.add(cur);
+    const [l, iStr] = cur.split('|');
+    const i = +iStr, L = LINES[l], name = L.stations[i];
+    if (name === to) return buildLegs(cur, prev);
+
+    const nbrs = [];
+    for (const dir of [0, 1]) {
+      const j = nextIdx(L, i, dir);
+      if (j >= 0 && j < L.stations.length) nbrs.push([key(l, j), L.run]);
+    }
+    for (const l2 of ALL_STATIONS[name]) {
+      if (l2 !== l) nbrs.push([key(l2, LINES[l2].index[name]), TRANSFER_MIN]);
+    }
+    for (const [nk, w] of nbrs) {
+      if (done.has(nk)) continue;
+      const nd = dist[cur] + w;
+      if (dist[nk] === undefined || nd < dist[nk]) { dist[nk] = nd; prev[nk] = cur; queue.push(nk); }
+    }
+  }
+  return null;
+}
+
+function buildLegs(endKey, prev) {
+  const nodes = [];
+  for (let k = endKey; k !== undefined; k = prev[k]) nodes.unshift(k.split('|'));
+  const legs = [];
+  for (const [l, iStr] of nodes) {
+    const i = +iStr, last = legs[legs.length - 1];
+    if (last && last.line === l) last.idxs.push(i);
+    else legs.push({ line: l, idxs: [i] });
+  }
+  // 환승만 하고 한 역도 안 탄 구간(출발역이 환승역일 때) 제거
+  const real = legs.filter(g => g.idxs.length > 1);
+  real.forEach(g => {
+    const L = LINES[g.line];
+    g.dir = nextIdx(L, g.idxs[0], 0) === g.idxs[1] ? 0 : 1;
+  });
+  return real;
+}
+
+// 경로를 tMin에 출발했을 때 각 구간 혼잡도 계산
+function simulate(legs, depMin, dayType) {
+  let t = depMin;
+  const segs = [];
+  legs.forEach((g, gi) => {
+    if (gi > 0) t += TRANSFER_MIN;
+    const L = LINES[g.line];
+    for (let k = 0; k < g.idxs.length - 1; k++) {
+      const pct = congestion(g.line, g.dir, g.idxs[k], dayType, t);
+      segs.push({ leg: gi, line: g.line, dir: g.dir, from: g.idxs[k], to: g.idxs[k + 1], t, pct });
+      t += L.run;
+    }
+  });
+  const peak = Math.max(...segs.map(s => s.pct));
+  const avg = segs.reduce((a, s) => a + s.pct, 0) / segs.length;
+  return { segs, arrive: t, peak, avg, minutes: t - depMin };
+}
+
+/* =========================================================
+   4. 칸별 혼잡도 (계단·환승 통로 위치 기반 시뮬레이션)
+   ========================================================= */
+function hash(str) {
+  let h = 2166136261;
+  for (let k = 0; k < str.length; k++) { h ^= str.charCodeAt(k); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function stairProfile(name, dir, n) {
+  const h = hash(name + dir);
+  const s1 = 1 + (h % n), s2 = 1 + ((h >>> 8) % n);
+  return Array.from({ length: n }, (_, c) => 0.5 * gauss(c + 1, s1, 1.1) + 0.3 * gauss(c + 1, s2, 1.1));
+}
+function carWeights(g) {
+  const L = LINES[g.line], n = L.cars;
+  const first = L.stations[g.idxs[0]], last = L.stations[g.idxs[g.idxs.length - 1]];
+  const a = stairProfile(first, g.dir, n), b = stairProfile(last, g.dir, n);
+  const w = Array.from({ length: n }, (_, c) => {
+    const edge = Math.min(c, n - 1 - c);  // 맨 앞·뒤 칸은 덜 붐빔
+    const shape = edge === 0 ? 0.8 : edge === 1 ? 0.93 : 1.03;
+    return shape + 0.4 * a[c] + 0.6 * b[c];
+  });
+  const mean = w.reduce((x, y) => x + y, 0) / n;
+  return w.map(v => v / mean);
+}
+
+/* =========================================================
+   5. 유틸
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const fmt = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+const toMin = v => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
+
+function levelIcon(lv, size = 14) {
+  const bars = [0, 1, 2, 3].map(k => {
+    const h = 4 + k * 3, x = k * 4;
+    const fill = k <= lv ? LEVELS[lv].color : 'var(--grid)';
+    return `<rect x="${x}" y="${size - h}" width="3" height="${h}" rx="1" fill="${fill}"/>`;
+  }).join('');
+  return `<svg width="15" height="${size}" viewBox="0 0 15 ${size}" aria-hidden="true">${bars}</svg>`;
+}
+const chip = pct => { const lv = levelOf(pct); return `<span class="chip">${levelIcon(lv)}${LEVELS[lv].name}</span>`; };
+const lineBadge = l => `<span class="line-badge" style="background:${LINES[l].color};color:${LINES[l].ink || '#fff'}">${l}</span>`;
+
+function dayTypeOf(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay();
+  const label = `${dateStr.slice(5).replace('-', '/')} (${WEEK[dow]})`;
+  if (HOLIDAYS[dateStr]) return { type: 'sunday', reason: `${label} · ${HOLIDAYS[dateStr]} → 공휴일은 일요일 패턴으로 계산` };
+  if (dow === 0) return { type: 'sunday', reason: `${label} · 일요일` };
+  if (dow === 6) return { type: 'saturday', reason: `${label} · 토요일` };
+  return { type: 'weekday', reason: `${label} · 평일` };
+}
+
+/* =========================================================
+   6. 화면
+   ========================================================= */
+const state = { from: '', to: '', depMin: 480, dayType: 'weekday', legs: null, sim: null, series: [], carLeg: 0 };
+
+function run() {
+  const from = $('#from').value.trim().replace(/역$/, ''), to = $('#to').value.trim().replace(/역$/, '');
+  const msg = $('#msg');
+  msg.textContent = '';
+  if (!ALL_STATIONS[from]) { msg.textContent = `'${from}' 역을 찾을 수 없습니다. 목록에서 골라 주세요. (2·7·9호선 지원)`; return; }
+  if (!ALL_STATIONS[to]) { msg.textContent = `'${to}' 역을 찾을 수 없습니다. 목록에서 골라 주세요. (2·7·9호선 지원)`; return; }
+  if (from === to) { msg.textContent = '출발역과 도착역이 같습니다.'; return; }
+  const dep = toMin($('#time').value || '08:00');
+  if (dep < SERVICE_START || dep > SERVICE_END - 10) msg.textContent = '운행 시간(05:30~24:00) 밖의 시각입니다. 가장 가까운 운행 시각 기준으로 보여 드립니다.';
+
+  state.from = from; state.to = to;
+  state.depMin = Math.min(Math.max(dep, SERVICE_START), SERVICE_END - 10);
+  state.legs = findRoute(from, to);
+  if (!state.legs || !state.legs.length) { msg.textContent = '경로를 찾지 못했습니다.'; return; }
+  state.carLeg = 0;
+  render();
+}
+
+function render() {
+  const { legs, depMin, dayType } = state;
+  state.sim = simulate(legs, depMin, dayType);
+  const cmpType = dayType === 'weekday' ? 'sunday' : 'weekday';
+  state.cmpType = cmpType;
+  state.series = [];
+  for (let t = SERVICE_START; t <= SERVICE_END - 10; t += 10) {
+    const a = simulate(legs, t, dayType), b = simulate(legs, t, cmpType);
+    state.series.push({ t, peak: a.peak, avg: a.avg, arrive: a.arrive, cmp: b.peak });
+  }
+  state.recos = recommend();
+  $('#result').classList.remove('hidden');
+  renderKpis(); renderLegs(); renderChart(); renderRecos(); renderCars(); renderArrivals();
+}
+
+function recommend() {
+  const { legs, depMin, dayType } = state;
+  const cands = [];
+  for (let t = depMin - 60; t <= depMin + 30; t += 10) {
+    if (t < SERVICE_START || t > SERVICE_END - 10) continue;
+    const s = simulate(legs, t, dayType);
+    cands.push({ t, peak: s.peak, avg: s.avg, arrive: s.arrive });
+  }
+  cands.sort((a, b) => (a.peak - b.peak) || (a.avg - b.avg));
+  return cands;
+}
+
+function renderKpis() {
+  const { sim, legs, recos, depMin } = state;
+  const best = recos[0];
+  const gain = sim.peak - best.peak;
+  const peakSeg = sim.segs.reduce((a, s) => (s.pct > a.pct ? s : a));
+  const L = LINES[peakSeg.line];
+  $('#kpis').innerHTML = `
+    <div class="kpi"><div class="k">예상 소요</div><div class="v">${sim.minutes}분</div>
+      <div class="d">${fmt(depMin)} 출발 → ${fmt(sim.arrive)} 도착</div></div>
+    <div class="kpi"><div class="k">환승</div><div class="v">${legs.length - 1}회</div>
+      <div class="d">${legs.map(g => lineBadge(g.line)).join(' → ')}</div></div>
+    <div class="kpi"><div class="k">가장 붐비는 구간</div><div class="v">${Math.round(sim.peak)}%</div>
+      <div class="d">${chip(sim.peak)} ${esc(L.stations[peakSeg.from])}→${esc(L.stations[peakSeg.to])}</div></div>
+    <div class="kpi"><div class="k">추천 출발</div><div class="v">${gain >= 5 ? fmt(best.t) : fmt(depMin)}</div>
+      <div class="d">${gain >= 5 ? `최고 혼잡도 −${Math.round(gain)}%p · ${chip(best.peak)}` : '지금 시각이 이미 한산한 편'}</div></div>`;
+}
+
+function renderLegs() {
+  const { legs, sim, from, to, dayType } = state;
+  $('#routeSub').textContent = `${from} → ${to} · ${DAY_LABEL[dayType]} · ${sim.segs.length}개 구간`;
+  $('#levelLegend').innerHTML = LEVELS.map((l, k) =>
+    `<span class="chip" style="font-weight:400;color:var(--ink-2)">${levelIcon(k)}${l.name} ${k === 0 ? '<60%' : k === 3 ? '150%+' : `${LEVELS[k - 1].max}~${l.max - 1}%`}</span>`).join('');
+  const peak = sim.peak;
+  let html = '';
+  legs.forEach((g, gi) => {
+    const L = LINES[g.line];
+    const segs = sim.segs.filter(s => s.leg === gi);
+    if (gi > 0) html += `<div class="transfer">↳ ${esc(L.stations[g.idxs[0]])}역 환승 · 약 ${TRANSFER_MIN}분</div>`;
+    html += `<div class="leg"><div class="leg-head">${lineBadge(g.line)} ${L.name} ${esc(L.dirNames[g.dir])}
+      <small>${esc(L.stations[g.idxs[0]])} → ${esc(L.stations[g.idxs[g.idxs.length - 1]])} · ${segs.length}개 역</small></div>`;
+    segs.forEach(s => {
+      const lv = levelOf(s.pct);
+      const w = Math.min(s.pct, 200) / 2;
+      html += `<div class="segrow${s.pct === peak ? ' peak' : ''}" title="${esc(L.stations[s.from])} → ${esc(L.stations[s.to])} ${Math.round(s.pct)}% ${LEVELS[lv].name}">
+        <span class="t">${fmt(s.t)}</span>
+        <span class="nm">${esc(L.stations[s.from])} → ${esc(L.stations[s.to])}</span>
+        <span style="display:flex;align-items:center;gap:6px"><span class="bar" style="flex:1"><i style="width:${w}%;background:${LEVELS[lv].color}"></i></span><span class="pct">${Math.round(s.pct)}%</span></span>
+        <span class="chipcell">${chip(s.pct)}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  $('#legs').innerHTML = html;
+}
+
+/* ---------- 시간대별 그래프 (SVG) ---------- */
+function renderChart() {
+  const box = $('#chart');
+  const W = Math.max(300, box.clientWidth || 600), H = 260;
+  const m = { l: 40, r: 12, t: 22, b: 26 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const S = state.series;
+  const x0 = SERVICE_START, x1 = SERVICE_END - 10;
+  const yMax = Math.max(200, Math.ceil(Math.max(...S.map(d => Math.max(d.peak, d.cmp))) / 50) * 50);
+  const xs = t => m.l + (t - x0) / (x1 - x0) * pw;
+  const ys = v => m.t + (1 - v / yMax) * ph;
+
+  let g = '';
+  for (let v = 0; v <= yMax; v += 50) {
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${ys(v)}" y2="${ys(v)}" stroke="${v === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    g += `<text x="${m.l - 6}" y="${ys(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}%</text>`;
+  }
+  // 단계 경계선
+  [[60, '보통'], [100, '혼잡'], [150, '매우 혼잡']].forEach(([v, name]) => {
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--baseline)" stroke-dasharray="2 3"/>`;
+    g += `<text x="${W - m.r}" y="${ys(v) - 4}" text-anchor="end" font-size="10" fill="var(--ink-2)">${name} ${v}%↑</text>`;
+  });
+  for (let h = 6; h <= 24; h += (pw < 420 ? 3 : 2)) {
+    const x = xs(Math.min(h * 60, x1));
+    g += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${h}시</text>`;
+  }
+  const path = key => S.map((d, k) => `${k ? 'L' : 'M'}${xs(d.t).toFixed(1)},${ys(d[key]).toFixed(1)}`).join('');
+  g += `<path d="${path('cmp')}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  g += `<path d="${path('peak')}" fill="none" stroke="var(--series-1)" stroke-width="2" stroke-linejoin="round"/>`;
+
+  // 희망 시각 / 추천 시각 표시
+  const dx = xs(state.depMin);
+  g += `<line x1="${dx}" x2="${dx}" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-2)" stroke-dasharray="3 3"/>`;
+  const depAnchor = dx > W - 80 ? 'end' : dx < m.l + 40 ? 'start' : 'middle';
+  g += `<text x="${dx}" y="${m.t - 8}" text-anchor="${depAnchor}" font-size="11" font-weight="600" fill="var(--ink)">희망 ${fmt(state.depMin)}</text>`;
+  const best = state.recos[0];
+  if (best && state.sim.peak - best.peak >= 5) {
+    g += `<circle cx="${xs(best.t)}" cy="${ys(best.peak)}" r="5" fill="var(--series-1)" stroke="var(--surface)" stroke-width="2"/>`;
+    const bx = xs(best.t), right = best.t >= state.depMin;
+    g += `<text x="${bx + (right ? 8 : -8)}" y="${ys(best.peak) + 16}" text-anchor="${right ? 'start' : 'end'}" font-size="11" font-weight="600" fill="var(--ink)">추천 ${fmt(best.t)}</text>`;
+  }
+  g += `<circle cx="${dx}" cy="${ys(state.sim.peak)}" r="4.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>`;
+
+  // hover 요소
+  g += `<line id="hx" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+  g += `<circle id="hd1" r="4" fill="var(--series-1)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+  g += `<circle id="hd2" r="3.5" fill="var(--muted)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>`;
+  g += `<rect id="hit" x="${m.l}" y="0" width="${pw}" height="${H}" fill="transparent" style="cursor:crosshair"/>`;
+
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="출발 시각별 최고 혼잡도 그래프">${g}</svg>`;
+
+  $('#chartLegend').innerHTML = `
+    <span><svg width="18" height="8"><line x1="0" x2="18" y1="4" y2="4" stroke="var(--series-1)" stroke-width="2"/></svg>${DAY_LABEL[state.dayType]} (선택)</span>
+    <span><svg width="18" height="8"><line x1="0" x2="18" y1="4" y2="4" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>비교: ${DAY_LABEL[state.cmpType]}</span>`;
+
+  const tip = $('#tip'), hit = $('#hit');
+  const pick = ev => {
+    const r = box.querySelector('svg').getBoundingClientRect();
+    const x = (ev.clientX - r.left) * (W / r.width);
+    const k = Math.round((x - m.l) / pw * (S.length - 1));
+    return S[Math.max(0, Math.min(S.length - 1, k))];
+  };
+  hit.addEventListener('pointermove', ev => {
+    const d = pick(ev), x = xs(d.t);
+    const hx = $('#hx'), h1 = $('#hd1'), h2 = $('#hd2');
+    hx.setAttribute('x1', x); hx.setAttribute('x2', x); hx.setAttribute('visibility', 'visible');
+    h1.setAttribute('cx', x); h1.setAttribute('cy', ys(d.peak)); h1.setAttribute('visibility', 'visible');
+    h2.setAttribute('cx', x); h2.setAttribute('cy', ys(d.cmp)); h2.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<div class="h">${fmt(d.t)} 출발 → ${fmt(d.arrive)} 도착</div>
+      <div class="r">${DAY_LABEL[state.dayType]} <b>${Math.round(d.peak)}%</b></div>
+      <div class="r" style="margin-bottom:4px">${chip(d.peak)}</div>
+      <div class="r">${DAY_LABEL[state.cmpType]} <b>${Math.round(d.cmp)}%</b></div>
+      <div class="r" style="margin-top:4px;font-size:11px">클릭하면 이 시각으로 계산</div>`;
+    tip.style.display = 'block';
+    const bw = box.clientWidth, px = x / W * bw;
+    tip.style.left = Math.min(Math.max(0, px + 12 > bw - 170 ? px - 172 : px + 12), bw - 160) + 'px';
+    tip.style.top = '8px';
+  });
+  hit.addEventListener('pointerleave', () => {
+    tip.style.display = 'none';
+    ['#hx', '#hd1', '#hd2'].forEach(s => $(s).setAttribute('visibility', 'hidden'));
+  });
+  hit.addEventListener('click', ev => { setDeparture(pick(ev).t); });
+
+  // 표 보기 (30분 단위)
+  const rows = S.filter(d => d.t % 30 === 0 || d.t === SERVICE_START).map(d =>
+    `<tr><td class="num">${fmt(d.t)}</td><td class="num">${Math.round(d.peak)}%</td><td>${chip(d.peak)}</td><td class="num">${Math.round(d.cmp)}%</td></tr>`).join('');
+  $('#chartTable').innerHTML = `<table><thead><tr><th>출발</th><th>${DAY_LABEL[state.dayType]} 최고</th><th>단계</th><th>${DAY_LABEL[state.cmpType]} 최고</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function setDeparture(t) {
+  state.depMin = t;
+  $('#time').value = fmt(t);
+  render();
+}
+
+function renderRecos() {
+  const { recos, sim, depMin } = state;
+  const top = recos.slice(0, 3);
+  const cur = recos.find(c => c.t === depMin) || { peak: sim.peak };
+  $('#recos').innerHTML = top.map((c, k) => {
+    const diff = Math.round(c.peak - cur.peak);
+    const shift = c.t - depMin;
+    const shiftTxt = shift === 0 ? '희망 시각' : shift < 0 ? `${-shift}분 일찍` : `${shift}분 늦게`;
+    return `<button type="button" class="reco${k === 0 ? ' best' : ''}" data-t="${c.t}">
+      <span class="tm">${fmt(c.t)}</span>
+      <span><span class="ds">${shiftTxt} 출발 · ${fmt(c.arrive)} 도착</span><br>${chip(c.peak)} <span class="ds">최고 ${Math.round(c.peak)}% · 평균 ${Math.round(c.avg)}%</span></span>
+      <span class="dl">${diff === 0 ? '±0%p' : (diff > 0 ? '+' : '−') + Math.abs(diff) + '%p'}</span>
+    </button>`;
+  }).join('');
+  document.querySelectorAll('.reco').forEach(b => b.addEventListener('click', () => setDeparture(+b.dataset.t)));
+}
+
+function renderCars() {
+  const { legs, sim } = state;
+  const gi = Math.min(state.carLeg, legs.length - 1);
+  const g = legs[gi], L = LINES[g.line];
+  $('#legPick').innerHTML = legs.length > 1 ? legs.map((x, k) =>
+    `<button type="button" class="btn-ghost" data-leg="${k}" aria-pressed="${k === gi}" style="${k === gi ? 'box-shadow:inset 0 0 0 2px var(--accent)' : ''}">${lineBadge(x.line)} ${esc(LINES[x.line].stations[x.idxs[0]])} 승차</button>`).join('') : '';
+  document.querySelectorAll('[data-leg]').forEach(b => b.addEventListener('click', () => { state.carLeg = +b.dataset.leg; renderCars(); }));
+
+  const segs = sim.segs.filter(s => s.leg === gi);
+  const peakSeg = segs.reduce((a, s) => (s.pct > a.pct ? s : a));
+  const w = carWeights(g);
+  const pcts = w.map(v => peakSeg.pct * v);
+  const minV = Math.min(...pcts);
+  const recoSet = new Set(pcts.map((v, k) => [v, k]).sort((a, b) => a[0] - b[0]).slice(0, 2).map(x => x[1]));
+  const recoList = [...recoSet].sort((a, b) => a - b).map(k => `${k + 1}번 칸`).join(', ');
+
+  $('#carSub').innerHTML = `${esc(L.stations[g.idxs[0]])}에서 탈 때, 이 구간에서 가장 붐비는 <b>${esc(L.stations[peakSeg.from])}→${esc(L.stations[peakSeg.to])}</b> 기준입니다. 추천: <b>${recoList}</b> (평균보다 약 ${Math.round(peakSeg.pct - minV)}%p 한산)`;
+  $('#trainDir').textContent = `◀ 진행 방향 (${L.dirNames[g.dir]}) · 1번 칸이 맨 앞`;
+  const cars = $('#cars');
+  cars.style.gridTemplateColumns = `repeat(${L.cars}, minmax(0, 1fr))`;
+  cars.innerHTML = pcts.map((p, k) => {
+    const lv = levelOf(p);
+    return `<div class="car${recoSet.has(k) ? ' reco-car' : ''}" title="${k + 1}번 칸 ${Math.round(p)}% ${LEVELS[lv].name}">
+      <div class="no">${k + 1}${recoSet.has(k) ? ' ★' : ''}</div>
+      <div class="box" style="background:${LEVELS[lv].color}">${Math.round(p)}</div>
+      <div class="lv">${LEVELS[lv].name}</div></div>`;
+  }).join('');
+}
+
+/* ---------- 실시간 도착 ---------- */
+let arrTimer = null, arrList = [];
+function headway(lineId, now, dayType) {
+  const h = now / 60;
+  const peak = dayType === 'weekday' && ((h >= 7 && h < 9.5) || (h >= 18 && h < 20));
+  const base = { '2': [2.5, 5.5], '7': [3.5, 6.5], '9': [4, 7] }[lineId];
+  return (peak ? base[0] : base[1]) * 60; // 초
+}
+function renderArrivals() {
+  const g = state.legs[0], L = LINES[g.line];
+  const name = L.stations[g.idxs[0]];
+  $('#arrSub').textContent = `${name}역 · ${L.name} ${L.dirNames[g.dir]} (지금 시각 기준)`;
+  $('#arrSrc').textContent = '시뮬레이션';
+  // 배차 간격 기반 시뮬레이션
+  const now = new Date();
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const today = dayTypeOf(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`).type;
+  const hw = headway(g.line, nowSec / 60, today);
+  const phase = hash(name + g.line + g.dir) % hw;
+  const first = (hw - ((nowSec + phase) % hw)) % hw || hw;
+  const dest = L.loop ? L.dirNames[g.dir] : `${L.dirNames[g.dir].replace(' 방면', '')}행`;
+  const prevStation = L.stations[nextIdx(L, g.idxs[0], 1 - g.dir)];
+  const inService = nowSec >= SERVICE_START * 60 && nowSec < SERVICE_END * 60;
+  arrList = inService ? [first, first + hw].map(s => ({ dest, via: prevStation ? `${prevStation} 방면에서 접근` : '', at: Date.now() + s * 1000 })) : [];
+  drawArrivals();
+  clearInterval(arrTimer);
+  arrTimer = setInterval(() => {
+    if (arrList.length && arrList[0].at < Date.now() - 20000) renderArrivals(); else drawArrivals();
+  }, 1000);
+}
+function drawArrivals() {
+  if (!arrList.length) { $('#arrivals').innerHTML = '<div class="arr"><span class="dst">지금은 운행 시간이 아닙니다</span></div>'; return; }
+  $('#arrivals').innerHTML = arrList.map(a => {
+    const s = Math.round((a.at - Date.now()) / 1000);
+    const txt = a.msg ? a.msg : s <= 0 ? '도착' : s < 60 ? `${s}초` : `${Math.floor(s / 60)}분 ${pad(s % 60)}초`;
+    return `<div class="arr"><span class="dst">${esc(a.dest)}<small>${esc(a.via || '')}</small></span><span class="eta">${esc(txt)}</span></div>`;
+  }).join('');
+}
+async function fetchRealtime() {
+  const key = $('#apiKey').value.trim();
+  if (!state.legs) return;
+  if (!key) { $('#arrSub').textContent = '인증키를 입력하면 실시간 API로 조회합니다.'; return; }
+  try { localStorage.setItem('subwayApiKey', key); } catch (e) {}
+  const g = state.legs[0], L = LINES[g.line], name = L.stations[g.idxs[0]];
+  const url = `http://swopenapi.seoul.go.kr/api/subway/${encodeURIComponent(key)}/json/realtimeStationArrival/0/20/${encodeURIComponent(name)}`;
+  $('#arrSrc').textContent = '조회 중…';
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const rows = data.realtimeArrivalList || [];
+    if (!rows.length) throw new Error(data.message || data.RESULT?.message || '도착 정보 없음');
+    let mine = rows.filter(r => r.subwayId === L.apiId && r.updnLine === L.apiDir[g.dir]);
+    if (!mine.length) mine = rows.filter(r => r.subwayId === L.apiId);
+    clearInterval(arrTimer);
+    arrList = mine.slice(0, 4).map(r => ({
+      dest: r.trainLineNm, via: r.updnLine,
+      msg: r.arvlMsg2, at: Date.now() + (+r.barvlDt || 0) * 1000,
+    }));
+    $('#arrSrc').textContent = '실시간 API';
+    $('#arrSub').textContent = `${name}역 · ${L.name} · 조회 ${fmt(new Date().getHours() * 60 + new Date().getMinutes())}`;
+    drawArrivals();
+  } catch (e) {
+    $('#arrSrc').textContent = '시뮬레이션';
+    $('#arrSub').textContent = `실시간 조회 실패: ${e.message} — 브라우저 보안(CORS/HTTPS) 정책으로 막힐 수 있습니다. 시뮬레이션을 표시합니다.`;
+  }
+}
+
+/* ---------- CSV (서울교통공사 지하철혼잡도정보) ---------- */
+async function loadCsv(file) {
+  const buf = await file.arrayBuffer();
+  let text;
+  try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+  catch (e) { text = new TextDecoder('euc-kr').decode(buf); }
+  text = text.replace(/^﻿/, '');
+  const lines = text.split(/\r?\n/).filter(s => s.trim());
+  const split = s => s.split(',').map(x => x.replace(/^"|"$/g, '').trim());
+  const head = split(lines[0]);
+  const col = test => head.findIndex(test);
+  const cDay = col(h => h.includes('요일')), cLine = col(h => h.includes('호선'));
+  const cSt = col(h => h.includes('출발역') || h.includes('역명'));
+  const cDir = col(h => h.includes('상하') || h.includes('방향'));
+  const tCols = head.map((h, k) => {
+    const mm = h.match(/^(\d{1,2})시(\d{2})분$/);
+    if (!mm) return null;
+    let t = +mm[1] * 60 + +mm[2];
+    if (t < 240) t += 1440;
+    return { k, t };
+  }).filter(Boolean);
+  if ([cDay, cLine, cSt, cDir].includes(-1) || !tCols.length) throw new Error('열 이름(요일구분, 호선, 출발역, 상하구분, 5시30분…)을 찾지 못했습니다.');
+
+  const dayMap = { 평일: 'weekday', 토요일: 'saturday', 일요일: 'sunday', 공휴일: 'sunday' };
+  const real = {}, count = {};
+  for (const ln of lines.slice(1)) {
+    const r = split(ln);
+    const lineId = (r[cLine].match(/\d/) || [])[0];
+    const L = LINES[lineId];
+    const day = dayMap[r[cDay]];
+    if (!L || !day || !L.csvDir.length) continue;
+    const dir = L.csvDir.indexOf(r[cDir]);
+    if (dir < 0) continue;
+    const raw = r[cSt].replace(/\s/g, '').replace(/역$/, '');
+    const names = [raw.replace(/\(.*\)/, ''), (raw.match(/\((.*)\)/) || [])[1]].filter(Boolean);
+    const idx = names.map(n => L.index[n]).find(v => v !== undefined);
+    if (idx === undefined) continue;
+    const arr = tCols.map(c => ({ t: c.t, v: parseFloat(r[c.k]) })).filter(p => !isNaN(p.v));
+    if (!arr.length) continue;
+    ((((real[lineId] ??= {})[dir] ??= {})[idx] ??= {}))[day] = arr;
+    count[lineId] = (count[lineId] || 0) + 1;
+  }
+  if (!Object.keys(count).length) throw new Error('2·7호선에 해당하는 행이 없습니다.');
+  REAL = real;
+  return count;
+}
+
+function updateNotice() {
+  const usingCsv = Object.keys(REAL).length > 0;
+  $('#dataNotice').innerHTML = usingCsv
+    ? `<span><b>실측 + 모델</b> — 2·7호선은 불러온 CSV 실측값, 9호선과 CSV에 없는 구간은 시뮬레이션 모델 값입니다. 칸별 혼잡도는 시뮬레이션입니다.</span>`
+    : `<span><b>시뮬레이션 데이터</b> — 역별 거주·업무 수요로 만든 모델 값입니다. 아래 「실측 데이터 불러오기」로 서울교통공사 CSV를 넣으면 실측값으로 바뀝니다. 지원 노선: 2·7·9호선(서울 구간).</span>`;
+}
+
+/* =========================================================
+   7. 초기화
+   ========================================================= */
+function setDayType(type, reason) {
+  state.dayType = type;
+  document.querySelectorAll('#daySeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.day === type)));
+  if (reason !== undefined) $('#dayReason').textContent = reason;
+}
+
+function init() {
+  $('#stations').innerHTML = Object.keys(ALL_STATIONS).sort((a, b) => a.localeCompare(b, 'ko'))
+    .map(s => `<option value="${s}">${ALL_STATIONS[s].join('·')}호선</option>`).join('');
+
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  $('#from').value = '신림';
+  $('#to').value = '여의도';
+  $('#date').value = today;
+  $('#time').value = '08:00';
+  const dt = dayTypeOf(today);
+  setDayType(dt.type, dt.reason);
+
+  try { const k = localStorage.getItem('subwayApiKey'); if (k) $('#apiKey').value = k; } catch (e) {}
+
+  $('#date').addEventListener('change', () => {
+    if (!$('#date').value) return;
+    const d = dayTypeOf($('#date').value);
+    setDayType(d.type, d.reason);
+    if (state.legs) render();
+  });
+  document.querySelectorAll('#daySeg button').forEach(b => b.addEventListener('click', () => {
+    setDayType(b.dataset.day, '직접 선택');
+    if (state.legs) render();
+  }));
+  $('#swap').addEventListener('click', () => { const a = $('#from').value; $('#from').value = $('#to').value; $('#to').value = a; });
+  $('#query').addEventListener('submit', e => { e.preventDefault(); run(); });
+  $('#apiBtn').addEventListener('click', fetchRealtime);
+
+  $('#csvFile').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const count = await loadCsv(f);
+      $('#csvStatus').textContent = `적용 완료: ${Object.entries(count).map(([l, n]) => `${l}호선 ${n}행`).join(', ')} (${f.name})`;
+      $('#csvReset').classList.remove('hidden');
+    } catch (err) {
+      $('#csvStatus').textContent = `불러오기 실패: ${err.message}`;
+    }
+    updateNotice();
+    if (state.legs) render();
+  });
+  $('#csvReset').addEventListener('click', () => {
+    REAL = {}; $('#csvFile').value = ''; $('#csvStatus').textContent = '모델 데이터로 되돌렸습니다.';
+    $('#csvReset').classList.add('hidden'); updateNotice(); if (state.legs) render();
+  });
+
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    $('#tab-svc').classList.toggle('hidden', b.dataset.tab !== 'svc');
+    $('#tab-plan').classList.toggle('hidden', b.dataset.tab !== 'plan');
+    if (b.dataset.tab === 'svc' && state.legs) renderChart();
+  }));
+
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (state.legs) renderChart(); }, 150); });
+
+  updateNotice();
+  run();
+}
+
+if (typeof document !== 'undefined') init();
+</script>
+</body>
+</html>
