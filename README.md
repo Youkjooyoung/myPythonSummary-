@@ -7,11 +7,12 @@
 
 ## 📚 학습 기록
 
-| 일차 | 날짜 | 학습 범위 | 주요 내용 | 링크 |
+<!-- &#8288; = 줄바꿈 방지 문자 (좁은 칸에서 '일차', '보기'가 세로로 끊기지 않게 함) -->
+| 일&#8288;차 | 날&#8288;짜 | 학습&nbsp;범위 | 주요 내용 | 링&#8288;크 |
 |:---:|:---:|:---:|---|:---:|
-| 1 | 2026-10-12 | v01_1 ~ v01_11 | 변수·자료형, 연산자, 리스트, f-string, 조건문(if), 반복문(for), zip, pyfiglet·termcolor, 함수(def) | [📖보기](https://blog.naver.com/fdufdu/224439257016) |
-| 2 | 2026-10-13 | v01_12 ~ v01_19<br>v02_1 ~ v02_2, v03_1 | 함수 반환값, 예외처리(try), while, with, 클래스(class), lambda<br>서울시 실시간 인파 데이터 수집·그래프, 출근길 지하철 혼잡도 웹페이지 | [📖보기](https://blog.naver.com/fdufdu/224440374855) |
-| 3 | 2026-10-14 | v02_1 ~ v02_5<br>v03_1 ~ v03_6 | OpenCV 웹캠 촬영·저장, schedule 주기 촬영, 이미지 증강(밝기·반전 등), labelImg 라벨링<br>YOLO11 분류(cls)·탐지(det)·포즈(pose)·분할(seg), 추론 파라미터(conf, classes) | [📖보기](https://blog.naver.com/fdufdu/224441617583) |
+| 1 | 2026-&#8288;10-&#8288;12 | v01_1&nbsp;\~&nbsp;v01_11 | 변수·자료형, 연산자, 리스트, f-string<br>조건문(if), 반복문(for), zip<br>pyfiglet·termcolor, 함수(def) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224439257016) |
+| 2 | 2026-&#8288;10-&#8288;13 | v01_12&nbsp;\~&nbsp;v01_19<br>v02_1&nbsp;\~&nbsp;v02_2<br>v03_1 | 함수 반환값, 예외처리(try), while, with<br>클래스(class), lambda<br>서울시 실시간 인파 데이터 수집·그래프<br>출근길 지하철 혼잡도 웹페이지 | [📖보&#8288;기](https://blog.naver.com/fdufdu/224440374855) |
+| 3 | 2026-&#8288;10-&#8288;14 | v02_1&nbsp;\~&nbsp;v02_5<br>v03_1&nbsp;\~&nbsp;v03_6 | OpenCV 웹캠 촬영·저장, schedule 주기 촬영<br>이미지 증강(밝기·반전 등), labelImg 라벨링<br>YOLO11 분류·탐지·포즈·분할<br>추론 파라미터(conf, classes) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224441617583) |
 
 ## 📁 폴더 구조
 
