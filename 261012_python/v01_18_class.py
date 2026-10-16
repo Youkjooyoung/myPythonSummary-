@@ -6,7 +6,9 @@ class Cat:
 
     # 1. 행동을 출력하는 메서드
     def info(self):
-        print(f"이 고양이의 이름은 {self.name}이고 색은 {self.color}이며 개월수는 {self.month}개월 입니다.")
+        print(
+            f"이 고양이의 이름은 {self.name}이고 색은 {self.color}이며 개월수는 {self.month}개월 입니다."
+        )
 
     def meow(self):
         print(f"{self.name}: 야옹~")

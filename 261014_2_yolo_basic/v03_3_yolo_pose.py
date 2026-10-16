@@ -1,5 +1,5 @@
-from ultralytics import YOLO
 import cv2
+from ultralytics import YOLO
 
 # 1. 모델 로드
 model = YOLO("yolo11n-pose.pt")

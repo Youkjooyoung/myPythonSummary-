@@ -6,4 +6,3 @@ try:
     print(f"{meters}m는 {feet:.2f} ft입니다.")
 except ValueError:
     print("숫자만 입력해주세요.")
-    

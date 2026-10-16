@@ -41,7 +41,7 @@ def fetch_area(area):
 
 
 # 2. 수집
-now_rows = []       # 현재 인구 현황
+now_rows = []  # 현재 인구 현황
 forecast_rows = []  # 12시간 예측
 
 for area in AREA_CODES:
@@ -52,10 +52,14 @@ for area in AREA_CODES:
     forecasts = item.pop("FCST_PPLTN", None) or []
     now_rows.append(item)
     for fc in forecasts:
-        forecast_rows.append({"AREA_CD": item["AREA_CD"], "AREA_NM": item["AREA_NM"], **fc})
+        forecast_rows.append(
+            {"AREA_CD": item["AREA_CD"], "AREA_NM": item["AREA_NM"], **fc}
+        )
 
-    print(f"[{item['AREA_CD']}] {item['AREA_NM']}: {item['AREA_CONGEST_LVL']} "
-          f"({item['AREA_PPLTN_MIN']}~{item['AREA_PPLTN_MAX']}명)")
+    print(
+        f"[{item['AREA_CD']}] {item['AREA_NM']}: {item['AREA_CONGEST_LVL']} "
+        f"({item['AREA_PPLTN_MIN']}~{item['AREA_PPLTN_MAX']}명)"
+    )
     time.sleep(0.1)  # 서버 부담 줄이기
 
 
@@ -78,8 +82,12 @@ save_csv(f"data/crowd_forecast_{stamp}.csv", forecast_rows)
 
 # 4. 혼잡한 곳 요약
 LEVELS = {"여유": 1, "보통": 2, "약간 붐빔": 3, "붐빔": 4}
-busy = sorted(now_rows, key=lambda r: LEVELS.get(r["AREA_CONGEST_LVL"], 0), reverse=True)
+busy = sorted(
+    now_rows, key=lambda r: LEVELS.get(r["AREA_CONGEST_LVL"], 0), reverse=True
+)
 
 print(f"\n=== 수집 장소 {len(now_rows)}곳 / 혼잡도 높은 순 TOP 10 ===")
 for r in busy[:10]:
-    print(f"{r['AREA_NM']:<20} {r['AREA_CONGEST_LVL']:<6} {r['AREA_PPLTN_MIN']}~{r['AREA_PPLTN_MAX']}명")
+    print(
+        f"{r['AREA_NM']:<20} {r['AREA_CONGEST_LVL']:<6} {r['AREA_PPLTN_MIN']}~{r['AREA_PPLTN_MAX']}명"
+    )
