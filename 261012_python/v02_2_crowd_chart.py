@@ -29,19 +29,21 @@ GRID = "#e1e0d9"
 BASELINE = "#c3c2b7"
 SURFACE = "#fcfcfb"
 
-plt.rcParams.update({
-    "font.family": "Malgun Gothic",  # 한글 폰트
-    "axes.unicode_minus": False,
-    "figure.facecolor": SURFACE,
-    "axes.facecolor": SURFACE,
-    "axes.edgecolor": BASELINE,
-    "axes.labelcolor": INK_SUB,
-    "text.color": INK,
-    "xtick.color": MUTED,
-    "ytick.color": MUTED,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-})
+plt.rcParams.update(
+    {
+        "font.family": "Malgun Gothic",  # 한글 폰트
+        "axes.unicode_minus": False,
+        "figure.facecolor": SURFACE,
+        "axes.facecolor": SURFACE,
+        "axes.edgecolor": BASELINE,
+        "axes.labelcolor": INK_SUB,
+        "text.color": INK,
+        "xtick.color": MUTED,
+        "ytick.color": MUTED,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+    }
+)
 
 
 # 1. 가장 최근 CSV 읽기
@@ -72,7 +74,10 @@ def style_grid(ax, axis):
 
 # 그래프 1, 2는 첫 번째 장소 기준 (여러 곳이면 혼잡도가 가장 높은 곳)
 LEVEL_ORDER = list(LEVEL_COLORS)
-target = max(now_rows, key=lambda r: (LEVEL_ORDER.index(r["AREA_CONGEST_LVL"]), int(r["AREA_PPLTN_MAX"])))
+target = max(
+    now_rows,
+    key=lambda r: (LEVEL_ORDER.index(r["AREA_CONGEST_LVL"]), int(r["AREA_PPLTN_MAX"])),
+)
 name = target["AREA_NM"]
 
 # 2. 그래프 1 - 앞으로 12시간 예상 인구
@@ -88,8 +93,14 @@ ax.bar(hours, pop_max, color=colors, width=0.7, edgecolor=SURFACE, linewidth=2)
 ax.vlines(hours, pop_min, pop_max, color=INK_SUB, linewidth=2)
 
 peak = pop_max.index(max(pop_max))
-ax.annotate(f"최대 {pop_min[peak]:,}~{pop_max[peak]:,}명", (peak, pop_max[peak]),
-            xytext=(0, 8), textcoords="offset points", ha="center", color=INK_SUB)
+ax.annotate(
+    f"최대 {pop_min[peak]:,}~{pop_max[peak]:,}명",
+    (peak, pop_max[peak]),
+    xytext=(0, 8),
+    textcoords="offset points",
+    ha="center",
+    color=INK_SUB,
+)
 
 ax.set_title(f"{name} 앞으로 12시간 예상 인구", loc="left", fontsize=14, pad=14)
 ax.set_ylabel("인구 (명)")
@@ -103,8 +114,16 @@ print(f"저장 완료: data/chart_forecast_{stamp}.png")
 
 # 3. 그래프 2 - 연령대별 인구 비율
 ages = ["0~9세", "10대", "20대", "30대", "40대", "50대", "60대", "70대 이상"]
-keys = ["PPLTN_RATE_0", "PPLTN_RATE_10", "PPLTN_RATE_20", "PPLTN_RATE_30",
-        "PPLTN_RATE_40", "PPLTN_RATE_50", "PPLTN_RATE_60", "PPLTN_RATE_70"]
+keys = [
+    "PPLTN_RATE_0",
+    "PPLTN_RATE_10",
+    "PPLTN_RATE_20",
+    "PPLTN_RATE_30",
+    "PPLTN_RATE_40",
+    "PPLTN_RATE_50",
+    "PPLTN_RATE_60",
+    "PPLTN_RATE_70",
+]
 rates = [float(target[k]) for k in keys]
 
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -113,8 +132,15 @@ ax.invert_yaxis()  # 0~9세가 위로
 for y, v in enumerate(rates):
     ax.text(v + 0.4, y, f"{v}%", va="center", color=INK_SUB)
 
-ax.set_title(f"{name} 연령대별 인구 비율 ({target['PPLTN_TIME']})", loc="left", fontsize=14, pad=14)
-ax.set_xlabel(f"비율 (%)    남성 {target['MALE_PPLTN_RATE']}% · 여성 {target['FEMALE_PPLTN_RATE']}%")
+ax.set_title(
+    f"{name} 연령대별 인구 비율 ({target['PPLTN_TIME']})",
+    loc="left",
+    fontsize=14,
+    pad=14,
+)
+ax.set_xlabel(
+    f"비율 (%)    남성 {target['MALE_PPLTN_RATE']}% · 여성 {target['FEMALE_PPLTN_RATE']}%"
+)
 ax.set_xlim(0, max(rates) * 1.15)
 style_grid(ax, "x")
 fig.tight_layout()
@@ -131,7 +157,12 @@ if len(now_rows) > 1:
     fig, ax = plt.subplots(figsize=(10, 7))
     ax.barh(names, values, color=colors, height=0.7, edgecolor=SURFACE, linewidth=2)
     ax.invert_yaxis()
-    ax.set_title(f"현재 인구가 많은 장소 TOP {len(top)} ({top[0]['PPLTN_TIME']})", loc="left", fontsize=14, pad=14)
+    ax.set_title(
+        f"현재 인구가 많은 장소 TOP {len(top)} ({top[0]['PPLTN_TIME']})",
+        loc="left",
+        fontsize=14,
+        pad=14,
+    )
     ax.set_xlabel("최대 인구 (명)")
     ax.xaxis.set_major_formatter(lambda v, _: f"{int(v):,}")
     style_grid(ax, "x")
@@ -140,6 +171,8 @@ if len(now_rows) > 1:
     fig.savefig(f"data/chart_top_{stamp}.png", dpi=150)
     print(f"저장 완료: data/chart_top_{stamp}.png")
 else:
-    print("장소가 1곳뿐이라 장소별 비교 그래프는 건너뜁니다. (인증키로 수집하면 생성됨)")
+    print(
+        "장소가 1곳뿐이라 장소별 비교 그래프는 건너뜁니다. (인증키로 수집하면 생성됨)"
+    )
 
 plt.show()

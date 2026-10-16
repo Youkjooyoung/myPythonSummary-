@@ -1,12 +1,13 @@
-import cv2
 import os
 import time
 from datetime import datetime
-import schedule
 
+import cv2
+import schedule
 
 # 사진 캡쳐 간격 설정
 interval_time = 5
+
 
 def capture_image():
     save_dir = "./capture_images"

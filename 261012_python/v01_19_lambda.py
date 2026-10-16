@@ -12,10 +12,10 @@
 
 import pyfiglet
 
-#pyfiglet 기본 함수
+# pyfiglet 기본 함수
 # def decorate_text(text):
 #     return pyfiglet.figlet_format(text)
 
-#pyfiglet 람다 함수
+# pyfiglet 람다 함수
 decorate_text = lambda text: pyfiglet.figlet_format(text)
 print(decorate_text("Lambda"))

@@ -25,34 +25,34 @@ img_sat = cv2.cvtColor(cv2.merge([h, s_up, v]), cv2.COLOR_HSV2BGR)
 fig, ax = plt.subplots(2, 3, figsize=(12, 6))
 
 # 3-1 원본 이미지
-ax[0,0].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-ax[0,0].axis('off')
-ax[0,0].set_title("Original")
+ax[0, 0].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+ax[0, 0].axis("off")
+ax[0, 0].set_title("Original")
 
 # 3-2 밝기 이미지
-ax[0,1].imshow(cv2.cvtColor(img_bright, cv2.COLOR_BGR2RGB))
-ax[0,1].axis('off')
-ax[0,1].set_title("Bright")
+ax[0, 1].imshow(cv2.cvtColor(img_bright, cv2.COLOR_BGR2RGB))
+ax[0, 1].axis("off")
+ax[0, 1].set_title("Bright")
 
 # 3-3 어두운 이미지
-ax[0,2].imshow(cv2.cvtColor(img_dark, cv2.COLOR_BGR2RGB))
-ax[0,2].axis('off')
-ax[0,2].set_title("Dark")
+ax[0, 2].imshow(cv2.cvtColor(img_dark, cv2.COLOR_BGR2RGB))
+ax[0, 2].axis("off")
+ax[0, 2].set_title("Dark")
 
 # 3-4 좌우 반전 이미지
-ax[1,0].imshow(cv2.cvtColor(img_flip, cv2.COLOR_BGR2RGB))
-ax[1,0].axis('off')
-ax[1,0].set_title("Flip")
+ax[1, 0].imshow(cv2.cvtColor(img_flip, cv2.COLOR_BGR2RGB))
+ax[1, 0].axis("off")
+ax[1, 0].set_title("Flip")
 
 # 3-5 색상 변경 이미지
-ax[1,1].imshow(cv2.cvtColor(img_hue, cv2.COLOR_BGR2RGB))
-ax[1,1].axis('off')
-ax[1,1].set_title("Hue")
+ax[1, 1].imshow(cv2.cvtColor(img_hue, cv2.COLOR_BGR2RGB))
+ax[1, 1].axis("off")
+ax[1, 1].set_title("Hue")
 
 # 3-6 채도 변경 이미지
-ax[1,2].imshow(cv2.cvtColor(img_sat, cv2.COLOR_BGR2RGB))
-ax[1,2].axis('off')
-ax[1,2].set_title("Saturation")
+ax[1, 2].imshow(cv2.cvtColor(img_sat, cv2.COLOR_BGR2RGB))
+ax[1, 2].axis("off")
+ax[1, 2].set_title("Saturation")
 
 # 4. 그림창 띄우기
 plt.tight_layout()
