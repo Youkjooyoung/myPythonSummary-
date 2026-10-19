@@ -13,6 +13,7 @@
 | 1 | 2026-&#8288;10-&#8288;12 | v01_1&nbsp;\~&nbsp;v01_11 | 변수·자료형, 연산자, 리스트, f-string<br>조건문(if), 반복문(for), zip<br>pyfiglet·termcolor, 함수(def) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224439257016) |
 | 2 | 2026-&#8288;10-&#8288;13 | v01_12&nbsp;\~&nbsp;v01_19<br>v02_1&nbsp;\~&nbsp;v02_2<br>v03_1 | 함수 반환값, 예외처리(try), while, with<br>클래스(class), lambda<br>서울시 실시간 인파 데이터 수집·그래프<br>출근길 지하철 혼잡도 웹페이지 | [📖보&#8288;기](https://blog.naver.com/fdufdu/224440374855) |
 | 3 | 2026-&#8288;10-&#8288;14 | v02_1&nbsp;\~&nbsp;v02_5<br>v03_1&nbsp;\~&nbsp;v03_6 | OpenCV 웹캠 촬영·저장, schedule 주기 촬영<br>이미지 증강(밝기·반전 등), labelImg 라벨링<br>YOLO11 분류·탐지·포즈·분할<br>추론 파라미터(conf, classes) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224441617583)<br>[📒노&#8288;트](https://youkjooyoung.github.io/myPythonSummary-/261014_cls_train_note.html) |
+| 4 | 2026-&#8288;10-&#8288;16 | v03_10&nbsp;\~&nbsp;v03_11<br>v04_01&nbsp;\~&nbsp;v04_05 | CCTV 스트림(HTTP/HLS) 실시간 탐지, putText 표시<br>객체 추적(track), 히트맵(Heatmap)<br>보안 알람 메일(SecurityAlarm), 얼굴 블러(ObjectBlurrer)<br>객체 간 거리 계산(DistanceCalculation) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224446252079) |
 
 ## 📁 폴더 구조
 
@@ -21,6 +22,8 @@
 | `261012_python/` | 파이썬 기초 문법(v01), 인파 데이터 수집·시각화(v02), 지하철 혼잡도 HTML(v03) |
 | `261014_1_data/` | 데이터 수집(웹캠·스케줄), 이미지 증강, 라벨링 |
 | `261014_2_yolo_basic/` | YOLO11 분류·탐지·포즈·분할 실습 |
+| `261016_3_yolo_basic/` | CCTV 스트림 실시간 탐지, 화면 텍스트 표시 |
+| `261016_4_yolo_advan/` | YOLO solutions 활용: 추적·히트맵·알람·블러·거리 계산 |
 | `capture_images/` | 촬영·증강한 이미지 |
 | `example_images/`, `labeling/` | 라벨링 실습용 이미지와 라벨(.txt) |
 | `_archive/` | 이전 실습 결과물 보관 |
