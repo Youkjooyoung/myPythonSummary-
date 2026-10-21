@@ -17,6 +17,16 @@ weights/
 *_openvino_model/
 *.npy
 
+# ===== 별도 레포지토리로 관리하는 폴더 =====
+# https://github.com/Youkjooyoung/261020_buchen_chatbot_yjy
+261020_buchen_chatbot_yjy/
+# https://github.com/Youkjooyoung/261020_bucheon_huggingface_yjy
+261020_8_hugging/261020_bucheon_hugging_yjy/
+
+# ===== 다른 사람의 레포 (사용해 보기용) — 절대 업로드 금지 =====
+# https://github.com/sayluaa/261020_bucheon_huggingface_say
+261020_bucheon_huggingface_say/
+
 # ===== 대용량 데이터셋 / 압축 파일 =====
 images/
 *.zip
@@ -54,6 +64,11 @@ passwords*
 *.password
 config.local.*
 local_settings.py
+
+# API 키를 그냥 텍스트로 저장한 파일 (예: groq_api_key.txt)
+*api_key*.txt
+*apikey*.txt
+.streamlit/secrets.toml
 
 # 클라우드·서비스 인증 키 (Google, AWS, Firebase 등)
 client_secret*.json
