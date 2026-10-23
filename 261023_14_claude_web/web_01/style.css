@@ -1,0 +1,112 @@
+/* 색상 변수: 여기만 바꾸면 전체 테마가 바뀐다 */
+:root {
+  --bg: #1e1f24;
+  --panel: #2a2c33;
+  --key: #3a3d46;
+  --key-hover: #4a4e59;
+  --func: #5a5f6b;
+  --op: #ff9f0a;
+  --op-hover: #ffb340;
+  --text: #f5f5f7;
+  --text-dim: #9a9ca5;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+  color: var(--text);
+}
+
+.calculator {
+  width: 100%;
+  max-width: 340px;
+  margin: 16px;
+  padding: 20px;
+  background: var(--panel);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* 화면 */
+.display {
+  padding: 12px 8px 20px;
+  text-align: right;
+  overflow: hidden;
+}
+
+.expression {
+  min-height: 24px;
+  font-size: 18px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.current {
+  font-size: 48px;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 숫자가 길어지면 글자를 줄인다 (script.js에서 클래스 추가) */
+.current.small {
+  font-size: 32px;
+}
+
+/* 버튼 4칸 격자 */
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.key {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: var(--key);
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.key:hover {
+  background: var(--key-hover);
+}
+
+.key:active,
+.key.pressed {
+  transform: scale(0.94);
+}
+
+.key.func {
+  background: var(--func);
+}
+
+.key.op,
+.key.equals {
+  background: var(--op);
+}
+
+.key.op:hover,
+.key.equals:hover {
+  background: var(--op-hover);
+}
+
+/* 선택된 연산자 표시 */
+.key.op.active {
+  background: var(--text);
+  color: var(--op);
+}

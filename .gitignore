@@ -26,6 +26,8 @@ weights/
 # ===== 다른 사람의 레포 (사용해 보기용) — 절대 업로드 금지 =====
 # https://github.com/sayluaa/261020_bucheon_huggingface_say
 261020_bucheon_huggingface_say/
+# https://github.com/guillaumemeyer/watermarks-remover
+261023_15_claude/watermarks-remover/
 
 # ===== 대용량 데이터셋 / 압축 파일 =====
 images/

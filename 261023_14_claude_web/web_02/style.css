@@ -1,0 +1,218 @@
+/* 색상 변수: 여기만 바꾸면 전체 테마가 바뀐다 */
+:root {
+  --bg: #1e1f24;
+  --panel: #2a2c33;
+  --key: #3a3d46;
+  --key-hover: #4a4e59;
+  --func: #5a5f6b;
+  --op: #ff9f0a;
+  --op-hover: #ffb340;
+  --text: #f5f5f7;
+  --text-dim: #9a9ca5;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+  color: var(--text);
+}
+
+/* 계산기 + 기록 패널을 가로로 나란히 */
+.app {
+  display: flex;
+  gap: 24px;
+  margin: 16px;
+}
+
+.calculator,
+.history {
+  background: var(--panel);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.calculator {
+  width: 340px;
+  padding: 20px;
+}
+
+/* 화면 */
+.display {
+  padding: 12px 8px 20px;
+  text-align: right;
+  overflow: hidden;
+}
+
+.expression {
+  min-height: 24px;
+  font-size: 18px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.current {
+  font-size: 48px;
+  font-weight: 300;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 숫자가 길어지면 글자를 줄인다 (script.js에서 클래스 추가) */
+.current.small {
+  font-size: 32px;
+}
+
+/* 버튼 4칸 격자 */
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.key {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  background: var(--key);
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.key:hover {
+  background: var(--key-hover);
+}
+
+.key:active,
+.key.pressed {
+  transform: scale(0.94);
+}
+
+.key.func {
+  background: var(--func);
+}
+
+.key.op,
+.key.equals {
+  background: var(--op);
+}
+
+.key.op:hover,
+.key.equals:hover {
+  background: var(--op-hover);
+}
+
+/* 선택된 연산자 표시 */
+.key.op.active {
+  background: var(--text);
+  color: var(--op);
+}
+
+/* ===== 계산 기록 패널 ===== */
+.history {
+  width: 300px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.history-clear {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--key);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.history-clear:hover {
+  background: var(--key-hover);
+  color: var(--text);
+}
+
+.history-empty {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* 기록이 많아지면 패널 안에서만 스크롤 (계산기 높이를 넘지 않도록 높이 0에서 시작해 늘어남) */
+.history-list {
+  list-style: none;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.history-item {
+  width: 100%;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  color: var(--text);
+  text-align: right;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.history-item:hover {
+  background: var(--key);
+}
+
+.history-expr {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.history-result {
+  display: block;
+  font-size: 22px;
+  word-break: break-all;
+}
+
+/* 좁은 화면: 기록 패널을 계산기 아래로 */
+@media (max-width: 700px) {
+  .app {
+    flex-direction: column;
+    width: calc(100% - 32px); /* 좌우 margin 16px씩을 빼야 작은 폰에서 옆으로 넘치지 않는다 */
+    max-width: 340px;
+  }
+
+  .calculator,
+  .history {
+    width: 100%;
+  }
+
+  .history-list {
+    flex: none;
+    max-height: 240px;
+  }
+}

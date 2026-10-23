@@ -1,0 +1,336 @@
+/* ===== 색상 토큰: 라이트 (기본) ===== */
+:root {
+  --desk: #D9DCD3;        /* 책상(페이지 배경) */
+  --plastic: #6F7D70;     /* 계산기 본체 */
+  --plastic-edge: #5A675B;
+  --key: #E9EBE4;         /* 숫자 키 */
+  --key-text: #22282A;
+  --op: #3E4A44;          /* 연산 키 */
+  --op-text: #FFFFFF;
+  --red: #B8322A;         /* = 키 */
+  --paper: #FBFAF5;       /* 종이 테이프 */
+  --ink: #2B2B2B;         /* 검정 잉크 */
+  --ink-red: #B8322A;     /* 빨강 잉크 (테이프 위 결과) */
+  --screen: #DDE0D6;
+  --screen-text: #22282A;
+  --focus: #F2C14E;
+
+  --font-dot: "DotGothic16", "Malgun Gothic", sans-serif;
+  --font-key: "IBM Plex Sans", "Malgun Gothic", sans-serif;
+}
+
+/* ===== 색상 토큰: 다크 (스위치로 전환) ===== */
+:root[data-theme="dark"] {
+  --desk: #1A1F1C;
+  --plastic: #2F3833;
+  --plastic-edge: #232A26;
+  --key: #4A554F;
+  --key-text: #E9EBE4;
+  --op: #1F2622;
+  --op-text: #FFFFFF;
+  --red: #D9554A;
+  --paper: #CFCDC3;
+  --ink: #2B2B2B;
+  --ink-red: #9A2620;     /* 어두운 종이 위에서도 읽히도록 조금 더 진하게 */
+  --screen: #1A1F1C;
+  --screen-text: #E9EBE4;
+}
+
+/* ===== 기본 ===== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-key);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.machine {
+  width: min(100%, 360px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== 종이 테이프 ===== */
+.tape {
+  position: relative;
+  width: 82%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-dot);
+  padding: 14px 14px 10px;
+  margin-top: 8px;
+}
+
+/* 테이프 윗부분: 톱니 모양으로 찢긴 종이 끝 */
+.tape::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: conic-gradient(from -45deg at bottom, var(--paper) 90deg, transparent 0) 0 0 / 16px 100%;
+}
+
+.tape-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  border-bottom: 1px dashed var(--ink);
+  padding-bottom: 6px;
+}
+
+.tape-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: normal;
+}
+
+.tape-clear {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  color: var(--ink);
+  font-family: var(--font-dot);
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.tape-roll {
+  height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;   /* 기록이 적을 때도 최신 줄이 본체 쪽(아래)에 붙는다 */
+}
+
+.tape-empty {
+  margin: auto 0;
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.tape-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tape-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  color: var(--ink);
+  font-family: var(--font-dot);
+  font-size: 15px;
+  text-align: left;
+}
+
+.tape-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.tape-expr {
+  min-width: 0;
+  overflow-wrap: break-word;  /* 긴 수식은 숫자 중간이 아니라 띄어쓰기에서 먼저 줄바꿈 */
+}
+
+.tape-result {
+  color: var(--ink-red);
+  white-space: nowrap;
+}
+
+/* 새 줄이 찍히면 테이프가 한 줄만큼 밀려 올라간다 */
+.tape-list.printed {
+  animation: feed 0.25s ease-out;
+}
+
+@keyframes feed {
+  from { transform: translateY(30px); }
+  to   { transform: translateY(0); }
+}
+
+/* ===== 계산기 본체 ===== */
+.body {
+  width: 100%;
+  background: var(--plastic);
+  border-radius: 20px 20px 28px 28px;
+  border-bottom: 8px solid var(--plastic-edge);
+  padding: 14px 18px 22px;
+}
+
+.body-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 테이프가 나오는 인쇄 구멍 */
+.slot {
+  width: 86%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--plastic-edge);
+}
+
+/* 밝게 / 어둡게 슬라이드 스위치 */
+.theme-switch {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--op-text);
+  font-size: 12px;
+}
+
+.switch-track {
+  position: relative;
+  width: 34px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--plastic-edge);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--key);
+  transition: transform 0.15s;
+}
+
+.theme-switch[aria-checked="true"] .switch-knob {
+  transform: translateX(16px);
+}
+
+/* ===== 화면 ===== */
+.screen {
+  margin: 10px 0 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--screen);
+  color: var(--screen-text);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-dot);
+  text-align: right;
+}
+
+.expr {
+  min-height: 22px;
+  font-size: 16px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  justify-content: flex-end;  /* 수식이 길면 앞부분이 잘리고 최근 입력이 보인다 */
+}
+
+.result {
+  display: block;
+  font-size: 44px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ===== 키패드 ===== */
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.key {
+  height: 58px;
+  border: none;
+  border-radius: 10px;
+  background: var(--key);
+  color: var(--key-text);
+  font-family: var(--font-key);
+  font-size: 22px;
+  font-weight: 600;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* 누르면 실제 키처럼 아래로 눌린다 */
+.key:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.key.fn {
+  font-size: 18px;
+}
+
+.key.op {
+  background: var(--op);
+  color: var(--op-text);
+}
+
+.key.equals {
+  background: var(--red);
+  color: #FFFFFF;
+}
+
+.key.zero {
+  grid-column: span 2;
+}
+
+/* ===== 모바일 ===== */
+@media (max-width: 480px) {
+  body {
+    align-items: flex-start;
+  }
+
+  .tape-roll {
+    height: 120px;
+  }
+
+  .key {
+    height: 52px;
+  }
+}
+
+/* 움직임을 줄이도록 설정한 사용자에게는 애니메이션을 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  .tape-list.printed {
+    animation: none;
+  }
+
+  .switch-knob {
+    transition: none;
+  }
+}

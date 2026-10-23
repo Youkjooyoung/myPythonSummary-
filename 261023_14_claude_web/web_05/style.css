@@ -1,0 +1,290 @@
+/* ===== 색상 토큰: 라이트 (기본) — design.md 배민 토큰 ===== */
+:root {
+  --mint: oklch(0.88 0.18 178);       /* 프라이머리 민트: 페이지 풀블리드 */
+  --mint-deep: oklch(0.69 0.13 184);  /* = 키 hover/press */
+  --ink: oklch(0.18 0 0);             /* near-black: 윤곽선·스티커 그림자·연산 키 */
+  --bone: oklch(0.97 0 286);          /* 본화이트 */
+  --surface: oklch(1 0 0);            /* 계산기 본체 */
+  --subtle: oklch(0.94 0 286);        /* AC·±·% 키 */
+  --fg-2: oklch(0.34 0 0);
+  --fg-3: oklch(0.55 0 0);
+
+  --page-bg: var(--mint);
+  --headline: var(--ink);
+  --hint: oklch(0.24 0.04 194);       /* mint-900: 민트 위 보조 문구 */
+  --key-bg: var(--surface);
+  --key-text: var(--ink);
+  --op-bg: var(--ink);
+  --op-text: var(--bone);
+  --pending-bg: var(--mint);          /* 눌러 둔 연산자 */
+  --pending-text: var(--ink);
+  --focus: var(--ink);
+
+  --font-display: "BM DOHYEON", "BM HANNA Pro", "Malgun Gothic", sans-serif;
+  --font-number: "BM HANNA Pro", "BM DOHYEON", "Malgun Gothic", sans-serif;
+  --font-body: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===== 색상 토큰: 다크 — 배경은 딥 민트, 민트는 = 키에만 남긴다 ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg: oklch(0.24 0.04 194);  /* mint-900 */
+    --headline: var(--bone);
+    --hint: oklch(0.92 0.13 178);     /* mint-200 */
+    --surface: oklch(0.30 0.035 194);
+    --subtle: oklch(0.36 0.035 194);
+    --fg-2: oklch(0.85 0 0);
+    --fg-3: oklch(0.71 0 0);
+    --key-bg: oklch(0.40 0.035 194);
+    --key-text: var(--bone);
+    --op-bg: var(--bone);
+    --op-text: var(--ink);
+    --pending-bg: var(--ink);
+    --pending-text: var(--bone);
+    --focus: var(--bone);
+  }
+}
+
+/* ===== 기본 ===== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--headline);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 레이아웃: 왼쪽 헤드라인, 오른쪽 계산기 ===== */
+.stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 64px 48px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 48px;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+
+.hint {
+  margin: 32px 0 0;
+  max-width: 28ch;
+  font-size: 17px;
+  line-height: 1.55;
+  font-weight: 600;
+  color: var(--hint);
+}
+
+/* ===== 계산기 본체: 이 페이지에서 유일하게 과감한 요소 (스티커 그림자) ===== */
+.calc {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  padding: 20px;
+  background: var(--surface);
+  border: 2.5px solid var(--ink);
+  border-radius: 32px;
+  box-shadow: 0 6px 0 var(--ink);
+}
+
+/* ===== 화면 ===== */
+.screen {
+  padding: 12px 8px 20px;
+  text-align: right;
+}
+
+.expr {
+  margin: 0;
+  min-height: 22px;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--fg-3);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.result {
+  margin: 4px 0 0;
+  font-family: var(--font-number);
+  font-size: 56px;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--key-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 숫자가 길어지면 글자를 줄인다 (script.js에서 클래스 지정) */
+.result.is-long {
+  font-size: 40px;
+}
+
+.result.is-longer {
+  font-size: 30px;
+}
+
+/* = 을 눌렀을 때만: 4px 아래에서 올라오는 짧은 슬라이드 */
+.result.is-new {
+  animation: slide-up 200ms var(--ease-out);
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ===== 키 ===== */
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.key {
+  height: 64px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--key-bg);
+  color: var(--key-text);
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), background-color 120ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 라이트에서 흰 숫자 키는 흰 본체와 구분되도록 옅은 윤곽선 */
+.key:not(.key--fn):not(.key--op):not(.key--eq) {
+  box-shadow: inset 0 0 0 1.5px var(--subtle);
+}
+
+.key--fn {
+  background: var(--subtle);
+  font-size: 19px;
+}
+
+.key--op {
+  background: var(--op-bg);
+  color: var(--op-text);
+  font-size: 26px;
+}
+
+.key--op.is-pending {
+  background: var(--pending-bg);
+  color: var(--pending-text);
+}
+
+.key--eq {
+  background: var(--mint);
+  color: var(--ink);
+  font-size: 28px;
+}
+
+.key--eq:hover {
+  background: var(--mint-deep);
+  color: var(--surface);
+}
+
+.key:active,
+.key.is-pressed {
+  transform: scale(0.96);
+}
+
+.key:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ===== 토스트: 검정 캡슐 + 90% 흰 글자 ===== */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 16px);
+  margin: 0;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  background: oklch(0.18 0 0);
+  color: oklch(1 0 0 / 0.9);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ===== 반응형: 900px 아래는 위아래로 쌓기 ===== */
+@media (max-width: 900px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: start;
+    gap: 64px; /* 계산기 위에 토스트가 뜰 자리 */
+    padding: 48px 16px 64px;
+  }
+
+  .hero {
+    width: min(100%, 380px);
+  }
+
+  .hint {
+    margin-top: 16px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 380px) {
+  .calc {
+    padding: 14px;
+  }
+
+  .key {
+    height: 58px;
+  }
+
+  .result {
+    font-size: 48px;
+  }
+}
+
+/* ===== 움직임 줄이기 설정 존중 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .key,
+  .toast {
+    transition: none;
+  }
+
+  .result.is-new {
+    animation: none;
+  }
+}

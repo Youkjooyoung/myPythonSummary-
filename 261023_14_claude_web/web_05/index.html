@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>민트 계산기</title>
+  <!-- BM 도현체(헤드라인) · BM 한나체(결과 숫자) · Pretendard(키·본문) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/BMDoHyeon/BMDOHYEON.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/BMHannaPro/BMHANNAPro.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+    <!-- 히어로: 한 줄 4~7자, 3줄로 끊는 도현체 헤드라인 -->
+    <div class="hero">
+      <h1 class="headline">더하고 빼고<br>다 계산해<br>드려요</h1>
+      <p class="hint">키보드로도 계산할 수 있어요. Enter는 =, Esc는 처음부터.</p>
+    </div>
+
+    <!-- 계산기 본체 -->
+    <section class="calc" aria-label="계산기">
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+      <div class="screen">
+        <p class="expr" id="expr"></p>
+        <p class="result" id="result" aria-live="polite">0</p>
+      </div>
+
+      <div class="keys">
+        <button class="key key--fn" type="button" data-key="clear" aria-label="모두 지우기">AC</button>
+        <button class="key key--fn" type="button" data-key="neg" aria-label="부호 바꾸기">±</button>
+        <button class="key key--fn" type="button" data-key="%" aria-label="퍼센트">%</button>
+        <button class="key key--op" type="button" data-key="÷" aria-label="나누기">÷</button>
+
+        <button class="key" type="button" data-key="7">7</button>
+        <button class="key" type="button" data-key="8">8</button>
+        <button class="key" type="button" data-key="9">9</button>
+        <button class="key key--op" type="button" data-key="×" aria-label="곱하기">×</button>
+
+        <button class="key" type="button" data-key="4">4</button>
+        <button class="key" type="button" data-key="5">5</button>
+        <button class="key" type="button" data-key="6">6</button>
+        <button class="key key--op" type="button" data-key="−" aria-label="빼기">−</button>
+
+        <button class="key" type="button" data-key="1">1</button>
+        <button class="key" type="button" data-key="2">2</button>
+        <button class="key" type="button" data-key="3">3</button>
+        <button class="key key--op" type="button" data-key="+" aria-label="더하기">+</button>
+
+        <button class="key key--fn" type="button" data-key="back" aria-label="한 글자 지우기">⌫</button>
+        <button class="key" type="button" data-key="0">0</button>
+        <button class="key" type="button" data-key="." aria-label="소수점">.</button>
+        <button class="key key--eq" type="button" data-key="=" aria-label="계산하기">=</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
