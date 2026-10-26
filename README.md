@@ -18,6 +18,7 @@
 | 6 | 2026-&#8288;10-&#8288;20 | v07_01&nbsp;\~&nbsp;v07_05<br>v08_01&nbsp;\~&nbsp;v08_03 | Groq API 기본 호출(.env로 키 관리), 대화형 챗봇(대화 기록 누적)<br>system 프롬프트 페르소나, temperature·max_completion_tokens<br>HuggingFace InferenceClient: DeepSeek-R1 질의응답<br>FLUX.1-schnell 텍스트→이미지 생성 | [📖보&#8288;기](https://blog.naver.com/fdufdu/224449187830) |
 | 7 | 2026-&#8288;10-&#8288;21 | v09_01&nbsp;\~&nbsp;v09_05<br>v10_01<br>v11_01&nbsp;\~&nbsp;v11_02<br>v12_01&nbsp;\~&nbsp;v12_04 | sentence-transformers 문장 유사도(코사인), transformers 감정 분석<br>텍스트 생성(GPT-2·KoGPT2), 요약(T5·KoBART), NLLB 번역<br>Tesseract OCR(영어·한글·번호판)<br>Streamlit CCTV + YOLO 대시보드, Gradio 웹앱(번역·YOLO 탐지) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224449203746) |
 | 8 | 2026-&#8288;10-&#8288;23 | v14&nbsp;web_01&nbsp;\~&nbsp;web_05<br>v15 | Claude Code CLI 모드(Shift+Tab, Plan 모드), 주요 명령어(/init·/clear·/compact 등)<br>frontend-design 스킬 + design.md로 계산기 웹 UI 5종 제작<br>Grill Me 스킬, 모델 비교(Haiku·Sonnet·Opus), MCP·토큰<br>CLAUDE.md 메모리 관리(200줄 이하), find-skills 스킬 설치 | [📖보&#8288;기](https://blog.naver.com/fdufdu/224451494719) |
+| 9 | 2026-&#8288;10-&#8288;26 | v15&nbsp;\~&nbsp;END | Claude Hook: 키 차단 보안 훅·작업 완료 알림 훅, Skill vs Hook 차이<br>MCP 개념(Tools·Resources·Prompts, AI와 외부 도구를 잇는 표준 플러그), 카카오 PlayMCP<br>weather-plugin: Open-Meteo OpenAPI MCP 서버 + Skill + Agent(옷차림) + Hook<br>project-roadmap 에이전트(기획~발표 로드맵) | [📖보&#8288;기](https://blog.naver.com/fdufdu/224454300154) |
 
 ## 📁 폴더 구조
 
@@ -38,6 +39,7 @@
 | `261021_12_gradio/` | Gradio 웹앱: 인사·번역·YOLO 이미지 탐지 |
 | `261023_14_claude_web/` | Claude Code + frontend-design 스킬로 만든 계산기 웹페이지 5종(HTML·CSS·JS) |
 | `261023_15_claude/` | 프로젝트 지역 지침(CLAUDE.md), find-skills 스킬 설치 |
+| `261026_15_claude/` | 플러그인 활성화 설정(`.claude/settings.json`) · 훅 실습은 [claude-hook](https://github.com/Youkjooyoung/claude-hook), MCP·Skill·Agent 플러그인은 [claude-local-guide](https://github.com/Youkjooyoung/claude-local-guide) 레포에 별도 관리 |
 | `demo_data/`, `sahi/` | SAHI·SAM 실습용 입력 이미지와 결과 이미지 |
 | `capture_images/` | 촬영·증강한 이미지 |
 | `example_images/`, `labeling/` | 라벨링 실습용 이미지와 라벨(.txt) |
